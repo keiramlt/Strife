@@ -8,6 +8,7 @@
         :root {
             --bg-color: #121212;
             --panel-bg: #1e1e1e;
+            --side-bg: #1a1a1a;
             --text-main: #ffffff;
             --text-muted: #a0a0a0;
             --accent: #bb86fc;
@@ -16,16 +17,16 @@
             --msg-other: #333333;
             --danger: #cf6679;
             --warn: #f0a020;
+            --ok: #81c784;
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        [hidden] { display: none !important; }
 
         body {
             background-color: var(--bg-color);
             color: var(--text-main);
             display: flex;
-            justify-content: center;
-            align-items: center;
             height: 100vh;
             overflow: hidden;
         }
@@ -48,16 +49,11 @@
         button:hover { background-color: var(--accent-hover); }
         button:disabled { opacity: 0.6; cursor: default; }
 
-        /* --- Start screen --- */
-        #gate {
-            background-color: var(--panel-bg);
-            padding: 2.5rem;
-            border-radius: 12px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-            width: 100%;
-            max-width: 420px;
-            max-height: 100vh;
-            overflow-y: auto;
+        /* --- Start screen (full page, card centred) --- */
+        #gate { flex: 1; display: flex; align-items: center; justify-content: center; padding: 1rem; overflow-y: auto; }
+        .card {
+            background-color: var(--panel-bg); padding: 2.5rem; border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5); width: 100%; max-width: 420px;
         }
         .tabs { display: flex; gap: 0.5rem; margin-bottom: 1.5rem; }
         .tab { background: transparent; border: 1px solid #333; color: var(--text-muted); padding: 0.6rem; font-size: 0.9rem; }
@@ -75,33 +71,33 @@
 
         /* --- Shared chat pieces --- */
         .chat-header {
-            padding: 1.2rem; background-color: #1a1a1a; display: flex;
-            justify-content: space-between; align-items: center; border-bottom: 1px solid #333;
+            padding: 1rem 1.2rem; background-color: var(--side-bg); display: flex;
+            justify-content: space-between; align-items: center; gap: 0.8rem; border-bottom: 1px solid #333;
         }
         .chat-header h2 { font-size: 1.2rem; margin: 0; color: var(--accent); }
-        .chat-messages { flex: 1; padding: 1.5rem; overflow-y: auto; display: flex; flex-direction: column; gap: 1rem; }
-        .message { max-width: 75%; padding: 0.8rem 1.2rem; border-radius: 15px; position: relative; line-height: 1.4; word-wrap: break-word; }
+        .chat-messages { flex: 1; padding: 1.5rem; overflow-y: auto; display: flex; flex-direction: column; gap: 0.8rem; }
+        .chat-messages.empty { align-items: center; justify-content: center; color: var(--text-muted); text-align: center; }
+        .message { max-width: min(75%, 700px); padding: 0.7rem 1.1rem; border-radius: 15px; line-height: 1.4; word-wrap: break-word; overflow-wrap: anywhere; }
         .msg-self { background-color: var(--msg-self); align-self: flex-end; border-bottom-right-radius: 2px; }
         .msg-other { background-color: var(--msg-other); align-self: flex-start; border-bottom-left-radius: 2px; }
         .msg-error { background-color: transparent; border: 1px solid var(--danger); color: var(--danger); }
         .msg-sender { font-size: 0.75rem; margin-bottom: 0.3rem; opacity: 0.8; font-weight: bold; }
-        .input-area { padding: 1rem; background-color: #1a1a1a; border-top: 1px solid #333; display: flex; gap: 0.5rem; }
+        .msg-time { font-size: 0.65rem; opacity: 0.6; margin-top: 0.3rem; text-align: right; }
+        .input-area { padding: 1rem; background-color: var(--side-bg); border-top: 1px solid #333; display: flex; gap: 0.5rem; }
         .input-area input {
-            flex: 1; padding: 0.8rem; border-radius: 20px; border: 1px solid #333;
-            background-color: #2a2a2a; color: white; outline: none;
+            flex: 1; padding: 0.8rem 1.1rem; border-radius: 20px; border: 1px solid #333;
+            background-color: #2a2a2a; color: white; outline: none; font-size: 1rem;
         }
         .input-area button { width: auto; padding: 0.8rem 1.5rem; border-radius: 20px; }
-        .outline-btn { width: auto; padding: 0.5rem 1rem; background: transparent; border: 1px solid var(--danger); color: var(--danger); }
+        .outline-btn { width: auto; padding: 0.5rem 1rem; font-size: 0.85rem; background: transparent; border: 1px solid var(--danger); color: var(--danger); }
+        .outline-btn:hover { background: rgba(207,102,121,0.15); }
 
-        /* --- Guest chat --- */
-        #guest-screen {
-            display: none; width: 100%; height: 100%; flex-direction: column;
-            max-width: 900px; background-color: var(--panel-bg);
-        }
+        /* --- Guest chat (full page) --- */
+        #guest-screen { display: none; flex: 1; min-width: 0; flex-direction: column; background-color: var(--panel-bg); }
 
-        /* --- Account app shell --- */
-        #app-shell { display: none; width: 100%; height: 100%; max-width: 1100px; background-color: var(--panel-bg); }
-        #sidebar { width: 280px; border-right: 1px solid #333; background: #1a1a1a; display: flex; flex-direction: column; }
+        /* --- Account app (full page) --- */
+        #app-shell { display: none; flex: 1; min-width: 0; background-color: var(--panel-bg); }
+        #sidebar { width: 300px; flex-shrink: 0; border-right: 1px solid #333; background: var(--side-bg); display: flex; flex-direction: column; }
         #user-header { padding: 1rem; border-bottom: 1px solid #333; display: flex; align-items: center; gap: 0.8rem; }
         #avatar {
             width: 40px; height: 40px; border-radius: 50%; background: var(--accent);
@@ -109,71 +105,114 @@
         }
         #user-meta { flex: 1; min-width: 0; }
         #user-name { font-weight: bold; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-        #user-fp { font-size: 0.7rem; color: var(--text-muted); font-family: monospace; }
+        #user-fp { font-size: 0.65rem; color: var(--text-muted); font-family: monospace; }
         #logoutBtn { width: auto; padding: 0.4rem 0.8rem; font-size: 0.8rem; background: transparent; border: 1px solid var(--danger); color: var(--danger); }
-        #sidebar-body { flex: 1; padding: 1rem; color: var(--text-muted); font-size: 0.85rem; overflow-y: auto; }
-        #main-pane { flex: 1; display: flex; flex-direction: column; }
-        #app-messages { align-items: center; justify-content: center; color: var(--text-muted); text-align: center; }
+        #sidebar-body { flex: 1; padding: 0.5rem 0; overflow-y: auto; }
+
+        .side-section { padding: 0.8rem 1rem; }
+        .side-title { font-size: 0.7rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 0.5rem; }
+        .side-empty { font-size: 0.8rem; color: var(--text-muted); line-height: 1.4; }
+        .side-msg { font-size: 0.8rem; margin-top: 0.4rem; min-height: 1em; }
+        .side-msg.ok { color: var(--ok); }
+        .side-msg.err { color: var(--danger); }
+        .add-row { display: flex; gap: 0.4rem; }
+        .add-row input { flex: 1; min-width: 0; padding: 0.55rem 0.7rem; border-radius: 6px; border: 1px solid #333; background: #2a2a2a; color: white; outline: none; }
+        .add-row input:focus { border-color: var(--accent); }
+        .mini-btn { width: auto; padding: 0.45rem 0.8rem; font-size: 0.8rem; }
+        .mini-btn.ghost { background: transparent; border: 1px solid #444; color: var(--text-muted); }
+        .mini-btn.ghost:hover { background: #2a2a2a; }
+        .row { display: flex; align-items: center; gap: 0.4rem; padding: 0.35rem 0; }
+        .row .name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .friend {
+            display: flex; align-items: center; gap: 0.6rem; padding: 0.55rem 0.7rem; border-radius: 8px;
+            cursor: pointer; margin-bottom: 2px;
+        }
+        .friend:hover { background: #262626; }
+        .friend.active { background: #2f2540; }
+        .friend .mini-avatar {
+            width: 28px; height: 28px; border-radius: 50%; background: #3a3a3a; flex-shrink: 0;
+            display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: bold;
+        }
+        .friend .name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .badge { background: var(--accent); color: #111; border-radius: 10px; font-size: 0.7rem; font-weight: bold; padding: 0.1rem 0.5rem; }
+
+        #main-pane { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+        .hdr-left { display: flex; align-items: center; gap: 0.8rem; min-width: 0; }
+        #chat-sub { font-size: 0.7rem; color: var(--text-muted); font-family: monospace; }
+        #chat-actions { display: flex; gap: 0.5rem; flex-shrink: 0; }
+        #backBtn { display: none; width: auto; padding: 0.4rem 0.8rem; background: transparent; border: 1px solid #444; }
+
+        @media (max-width: 700px) {
+            #sidebar { width: 100%; border-right: none; }
+            #main-pane { display: none; }
+            #app-shell.chat-open #sidebar { display: none; }
+            #app-shell.chat-open #main-pane { display: flex; }
+            #backBtn { display: inline-block; }
+            .message { max-width: 88%; }
+            .card { padding: 1.5rem; }
+        }
     </style>
 </head>
 <body>
 
     <!-- Start screen: guest rooms or account -->
     <div id="gate">
-        <h1>Strife</h1>
+        <div class="card">
+            <h1>Strife</h1>
 
-        <div class="tabs">
-            <button type="button" class="tab active" id="tab-guest">Guest</button>
-            <button type="button" class="tab" id="tab-login">Log in</button>
-            <button type="button" class="tab" id="tab-register">Register</button>
-        </div>
+            <div class="tabs">
+                <button type="button" class="tab active" id="tab-guest">Guest</button>
+                <button type="button" class="tab" id="tab-login">Log in</button>
+                <button type="button" class="tab" id="tab-register">Register</button>
+            </div>
 
-        <!-- Guest: shared-passphrase room, no account -->
-        <form id="guest-form">
-            <p class="hint">No account needed. Share the room code and passphrase with the people you want to talk to.</p>
-            <div class="input-group">
-                <label for="guestName">Display name</label>
-                <input type="text" id="guestName" maxlength="32" placeholder="e.g. Keira" autocomplete="off">
-            </div>
-            <div class="input-group">
-                <label for="roomCode">Room Code</label>
-                <input type="text" id="roomCode" placeholder="e.g. session-17625843" autocomplete="off">
-            </div>
-            <div class="input-group">
-                <label for="encKey">Encryption Key (Password)</label>
-                <input type="password" id="encKey" placeholder="use a long, random passphrase" autocomplete="off">
-            </div>
-            <div class="error" id="guest-error"></div>
-            <button type="submit" id="joinBtn">Join Room</button>
-        </form>
-
-        <!-- Account: login / register -->
-        <div id="account-area" style="display:none;">
-            <div id="local-accounts" style="display:none;">
-                <div class="label">Accounts on this device</div>
-                <div id="local-accounts-list"></div>
-            </div>
-            <p class="hint">An account lets you add friends and send dedicated direct messages.</p>
-            <form id="auth-form">
+            <!-- Guest: shared-passphrase room, no account -->
+            <form id="guest-form">
+                <p class="hint">No account needed. Share the room code and passphrase with the people you want to talk to.</p>
                 <div class="input-group">
-                    <label for="username">Username</label>
-                    <input type="text" id="username" maxlength="32" autocomplete="username">
+                    <label for="guestName">Display name</label>
+                    <input type="text" id="guestName" maxlength="32" placeholder="e.g. Keira" autocomplete="off">
                 </div>
                 <div class="input-group">
-                    <label for="password">Password</label>
-                    <input type="password" id="password" autocomplete="current-password">
+                    <label for="roomCode">Room Code</label>
+                    <input type="text" id="roomCode" placeholder="e.g. session-17625843" autocomplete="off">
                 </div>
-                <div class="input-group" id="confirm-group" style="display:none;">
-                    <label for="password2">Confirm password</label>
-                    <input type="password" id="password2" autocomplete="new-password">
+                <div class="input-group">
+                    <label for="encKey">Encryption Key (Password)</label>
+                    <input type="password" id="encKey" placeholder="use a long, random passphrase" autocomplete="off">
                 </div>
-                <div class="notice" id="register-notice" style="display:none;">
-                    Your password also protects your encryption key. The server cannot reset or recover it:
-                    if you forget it, your messages are permanently unreadable.
-                </div>
-                <div class="error" id="auth-error"></div>
-                <button type="submit" id="authBtn">Log in</button>
+                <div class="error" id="guest-error"></div>
+                <button type="submit" id="joinBtn">Join Room</button>
             </form>
+
+            <!-- Account: login / register -->
+            <div id="account-area" style="display:none;">
+                <div id="local-accounts" style="display:none;">
+                    <div class="label">Accounts on this device</div>
+                    <div id="local-accounts-list"></div>
+                </div>
+                <p class="hint">An account lets you add friends and send dedicated direct messages.</p>
+                <form id="auth-form">
+                    <div class="input-group">
+                        <label for="username">Username</label>
+                        <input type="text" id="username" maxlength="32" autocomplete="username">
+                    </div>
+                    <div class="input-group">
+                        <label for="password">Password</label>
+                        <input type="password" id="password" autocomplete="current-password">
+                    </div>
+                    <div class="input-group" id="confirm-group" style="display:none;">
+                        <label for="password2">Confirm password</label>
+                        <input type="password" id="password2" autocomplete="new-password">
+                    </div>
+                    <div class="notice" id="register-notice" style="display:none;">
+                        Your password also protects your encryption key. The server cannot reset or recover it:
+                        if you forget it, your messages are permanently unreadable.
+                    </div>
+                    <div class="error" id="auth-error"></div>
+                    <button type="submit" id="authBtn">Log in</button>
+                </form>
+            </div>
         </div>
     </div>
 
@@ -190,7 +229,7 @@
         </div>
     </div>
 
-    <!-- Account app shell (DMs arrive in the next step) -->
+    <!-- Account app -->
     <div id="app-shell">
         <div id="sidebar">
             <div id="user-header">
@@ -201,11 +240,58 @@
                 </div>
                 <button id="logoutBtn">Log out</button>
             </div>
-            <div id="sidebar-body">Friends and rooms will appear here.</div>
+            <div id="sidebar-body">
+                <div class="side-section">
+                    <div class="side-title">Add friend</div>
+                    <form id="add-form" class="add-row">
+                        <input type="text" id="addName" maxlength="32" placeholder="Username" autocomplete="off">
+                        <button type="submit" class="mini-btn">Add</button>
+                    </form>
+                    <div class="side-msg" id="add-msg"></div>
+                </div>
+
+                <div class="side-section" id="req-section" hidden>
+                    <div class="side-title">Requests</div>
+                    <div id="req-list"></div>
+                </div>
+
+                <div class="side-section">
+                    <div class="side-title">Friends</div>
+                    <div id="friend-list"></div>
+                    <div class="side-empty" id="friend-empty">No friends yet. Add someone by username.</div>
+                </div>
+
+                <div class="side-section" id="blocked-section" hidden>
+                    <div class="side-title">Blocked</div>
+                    <div id="blocked-list"></div>
+                </div>
+
+                <div class="side-section">
+                    <div class="side-title">Rooms</div>
+                    <div class="side-empty">Coming soon.</div>
+                </div>
+            </div>
         </div>
+
         <div id="main-pane">
-            <div class="chat-header"><h2>Welcome</h2></div>
-            <div class="chat-messages" id="app-messages">You're signed in. Direct messages are coming in the next step.</div>
+            <div class="chat-header">
+                <div class="hdr-left">
+                    <button id="backBtn" title="Back">&larr;</button>
+                    <div>
+                        <h2 id="chat-title">Welcome</h2>
+                        <div id="chat-sub"></div>
+                    </div>
+                </div>
+                <div id="chat-actions" hidden>
+                    <button id="removeBtn" class="outline-btn">Remove</button>
+                    <button id="blockBtn" class="outline-btn">Block</button>
+                </div>
+            </div>
+            <div class="chat-messages empty" id="app-messages">Pick a friend on the left to start an encrypted conversation.</div>
+            <div class="input-area" id="dm-input" hidden>
+                <input type="text" id="dmText" maxlength="4000" placeholder="Type an encrypted message..." autocomplete="off">
+                <button id="dmSend">Send</button>
+            </div>
         </div>
     </div>
 
@@ -213,6 +299,7 @@
         // --- Config ---
         const API = "https://kei.mt/chat/api.php"; // change if api.php moves
         const PBKDF2_ITERATIONS = 600000;          // OWASP 2023+ guidance
+        const SYNC_MS = 3000;
 
         const enc = new TextEncoder();
         const dec = new TextDecoder();
@@ -230,6 +317,28 @@
             let s = '';
             for (let i = 0; i < u8.length; i++) s += String.fromCharCode(u8[i]);
             return btoa(s);
+        }
+
+        // Message bubble (innerText only — no HTML injection)
+        function bubble(user, text, className, ts) {
+            const el = document.createElement('div');
+            el.className = `message ${className}`;
+            if (className.indexOf('msg-self') === -1 && user) {
+                const senderEl = document.createElement('div');
+                senderEl.className = 'msg-sender';
+                senderEl.innerText = user;
+                el.appendChild(senderEl);
+            }
+            const textEl = document.createElement('div');
+            textEl.innerText = text;
+            el.appendChild(textEl);
+            if (ts) {
+                const t = document.createElement('div');
+                t.className = 'msg-time';
+                t.innerText = new Date(ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                el.appendChild(t);
+            }
+            return el;
         }
 
         // =====================================================================
@@ -259,14 +368,13 @@
         $('tab-register').addEventListener('click', () => setMode('register'));
 
         // =====================================================================
-        //  GUEST ROOMS (shared passphrase, no account) - unchanged behaviour
+        //  GUEST ROOMS (shared passphrase, no account)
         // =====================================================================
         let guestKey, guestUser, guestRoom;
         let lastTime = 0;
         let pollInterval;
         const seen = new Set(); // anti-replay: authenticated (user|ts) tuples already shown
 
-        // Derive the AES key from the passphrase + a random per-room salt from the server.
         async function deriveRoomKey(password, saltBytes) {
             const keyMaterial = await crypto.subtle.importKey(
                 "raw", enc.encode(password), { name: "PBKDF2" }, false, ["deriveKey"]
@@ -277,7 +385,6 @@
             );
         }
 
-        // Bind room + sender + timestamp into the cipher so forged names/timestamps fail.
         function buildAAD(room, user, ts) {
             return enc.encode(JSON.stringify({ r: room, u: user, t: ts }));
         }
@@ -299,7 +406,7 @@
                 );
                 return dec.decode(decrypted);
             } catch (e) {
-                return null; // wrong key OR forged sender/timestamp OR tampered ciphertext
+                return null;
             }
         }
 
@@ -401,22 +508,9 @@
             }
         }
 
-        // innerText only — no HTML injection
         function appendMessage(user, text, className) {
             const box = $('guest-messages');
-            const el = document.createElement('div');
-            el.className = `message ${className}`;
-
-            const senderEl = document.createElement('div');
-            senderEl.className = 'msg-sender';
-            senderEl.innerText = user;
-
-            const textEl = document.createElement('div');
-            textEl.innerText = text;
-
-            if (className.indexOf('msg-self') === -1) el.appendChild(senderEl);
-            el.appendChild(textEl);
-            box.appendChild(el);
+            box.appendChild(bubble(user, text, className));
             box.scrollTop = box.scrollHeight;
         }
 
@@ -432,14 +526,14 @@
         }
 
         // =====================================================================
-        //  ACCOUNTS (optional)
+        //  ACCOUNTS: keys, login, register
         // =====================================================================
         let currentUser = null;   // { id, username, public_key }
         let myPrivateKey = null;  // non-extractable ECDH CryptoKey
         let hasLocalAccounts = false;
 
-        async function api(action, body) {
-            const res = await fetch(`${API}?action=${action}`, {
+        async function api(action, body, qs = '') {
+            const res = await fetch(`${API}?action=${action}${qs}`, {
                 method: body ? 'POST' : 'GET',
                 credentials: 'include',
                 headers: body ? { 'Content-Type': 'application/json' } : {},
@@ -447,7 +541,11 @@
             });
             let data = {};
             try { data = await res.json(); } catch (e) {}
-            if (!res.ok) throw new Error(data.error || 'Request failed');
+            if (!res.ok) {
+                const err = new Error(data.error || 'Request failed');
+                err.status = res.status;
+                throw err;
+            }
             return data;
         }
 
@@ -597,16 +695,6 @@
             }
         });
 
-        async function enterApp(user, privateKey) {
-            currentUser = user;
-            myPrivateKey = privateKey;
-            $('avatar').innerText = user.username.charAt(0).toUpperCase();
-            $('user-name').innerText = user.username;
-            $('user-fp').innerText = await fingerprint(user.public_key);
-            $('gate').style.display = 'none';
-            $('app-shell').style.display = 'flex';
-        }
-
         $('logoutBtn').addEventListener('click', async () => {
             try { await api('logout', {}); } catch (e) {}
             location.reload(); // drops in-memory keys; local keys stay for next login
@@ -640,13 +728,363 @@
                     if (!confirm(`Remove ${a.username} from this device? You can restore it by logging in with the password.`)) return;
                     await idbDelete(a.userId);
                     await renderLocalAccounts();
-                    setMode(mode);
                 });
 
                 row.append(pick, forget);
                 list.appendChild(row);
             }
             setMode(mode);
+        }
+
+        // =====================================================================
+        //  ACCOUNTS: friends + direct messages
+        // =====================================================================
+        let friends = new Map();   // id -> { id, username, public_key }
+        let incoming = [];         // [{ id, username }]
+        let outgoing = [];
+        let blocked = [];
+        let blockedIds = new Set();
+        const peers = new Map();   // id -> user, for people not in the friends list
+        const keysCache = new Map(); // peer public key (b64) -> AES-GCM CryptoKey
+        const convs = new Map();   // peerId -> [{ id, mine, text, ts }]
+        const seenDm = new Set();
+        const readMarks = new Map(); // peerId -> last read message id
+        let lastDmId = 0;
+        let activeId = null;       // activeTarget: { type: 'dm', id } (rooms come later)
+        let syncing = false, syncAgain = false;
+        let syncTimer = null;
+
+        const conv = (id) => { if (!convs.has(id)) convs.set(id, []); return convs.get(id); };
+
+        // --- Read markers (per device, remembered in localStorage) ---
+        const readKey = (id) => `strife:read:${currentUser.id}:${id}`;
+        function getRead(id) {
+            if (!readMarks.has(id)) {
+                let v = 0;
+                try { v = parseInt(localStorage.getItem(readKey(id)) || '0', 10) || 0; } catch (e) {}
+                readMarks.set(id, v);
+            }
+            return readMarks.get(id);
+        }
+        function markRead(id) {
+            const list = conv(id);
+            if (!list.length) return;
+            const last = list[list.length - 1].id;
+            readMarks.set(id, last);
+            try { localStorage.setItem(readKey(id), String(last)); } catch (e) {}
+        }
+        function unreadCount(id) {
+            const mark = getRead(id);
+            return conv(id).filter(m => !m.mine && m.id > mark).length;
+        }
+
+        // --- Pairwise DM key: ECDH(myPrivate, theirPublic) -> HKDF -> AES-GCM-256 ---
+        async function getPeer(id) {
+            if (friends.has(id)) return friends.get(id);
+            if (peers.has(id)) return peers.get(id);
+            const r = await api('get_user_key', null, `&id=${encodeURIComponent(id)}`);
+            peers.set(id, r.user);
+            return r.user;
+        }
+
+        async function dmKey(peerId) {
+            const peer = await getPeer(peerId);
+            if (keysCache.has(peer.public_key)) return keysCache.get(peer.public_key);
+            const theirPub = await crypto.subtle.importKey(
+                "raw", b64ToBytes(peer.public_key), { name: "ECDH", namedCurve: "P-256" }, false, []
+            );
+            const bits = await crypto.subtle.deriveBits({ name: "ECDH", public: theirPub }, myPrivateKey, 256);
+            const hk = await crypto.subtle.importKey("raw", bits, "HKDF", false, ["deriveKey"]);
+            const key = await crypto.subtle.deriveKey(
+                { name: "HKDF", hash: "SHA-256", salt: new Uint8Array(0), info: enc.encode('strife/dm/v1') },
+                hk, { name: "AES-GCM", length: 256 }, false, ["encrypt", "decrypt"]
+            );
+            keysCache.set(peer.public_key, key);
+            return key;
+        }
+
+        // Bind sender + recipient + timestamp into the cipher so relabelling fails authentication.
+        const dmAAD = (s, r, t) => enc.encode(JSON.stringify({ s, r, t, v: 1 }));
+
+        async function ingest(m) {
+            if (seenDm.has(m.id)) return null;
+            const mine = m.sender_id === currentUser.id;
+            const peerId = mine ? m.recipient_id : m.sender_id;
+            if (!mine && blockedIds.has(m.sender_id)) return null;
+
+            const key = await dmKey(peerId); // network failure here aborts this sync; it retries next tick
+            seenDm.add(m.id);
+
+            let text = null;
+            try {
+                const pt = await crypto.subtle.decrypt(
+                    { name: "AES-GCM", iv: b64ToBytes(m.iv), additionalData: dmAAD(m.sender_id, m.recipient_id, m.ts) },
+                    key, b64ToBytes(m.ciphertext)
+                );
+                text = dec.decode(pt);
+            } catch (e) { /* tampered or wrong key: shown as undecryptable */ }
+
+            const msg = { id: m.id, mine, peerId, text, ts: m.ts };
+            conv(peerId).push(msg);
+            return msg;
+        }
+
+        // --- Sync loop ---
+        async function sync() {
+            if (!currentUser) return;
+            if (syncing) { syncAgain = true; return; }
+            syncing = true;
+            try {
+                do {
+                    syncAgain = false;
+                    const r = await api('sync', null, `&since=${lastDmId}`);
+                    applySocial(r.social);
+                    for (const m of r.dms) {
+                        const msg = await ingest(m);
+                        if (msg && msg.peerId === activeId) {
+                            const box = $('app-messages');
+                            box.appendChild(dmBubble(msg));
+                            box.scrollTop = box.scrollHeight;
+                            if (document.visibilityState === 'visible') markRead(activeId);
+                        }
+                    }
+                    if (r.dms.length) lastDmId = r.dms[r.dms.length - 1].id;
+                    if (r.dms.length >= 200) syncAgain = true;
+                    renderSidebar();
+                } while (syncAgain);
+            } catch (e) {
+                if (e.status === 401) location.reload(); // session ended
+            } finally {
+                syncing = false;
+            }
+        }
+
+        function applySocial(s) {
+            friends = new Map(s.friends.map(f => [f.id, f]));
+            incoming = s.incoming;
+            outgoing = s.outgoing;
+            blocked = s.blocked;
+            blockedIds = new Set(blocked.map(b => b.id));
+            if (activeId && !friends.has(activeId)) closeDm();
+        }
+
+        // --- Sidebar rendering ---
+        function nameRow(user, buttons) {
+            const row = document.createElement('div');
+            row.className = 'row';
+            const name = document.createElement('div');
+            name.className = 'name';
+            name.innerText = user.username;
+            row.appendChild(name);
+            for (const [label, ghost, fn] of buttons) {
+                const b = document.createElement('button');
+                b.type = 'button';
+                b.className = 'mini-btn' + (ghost ? ' ghost' : '');
+                b.innerText = label;
+                b.addEventListener('click', fn);
+                row.appendChild(b);
+            }
+            return row;
+        }
+
+        function renderSidebar() {
+            // Friends
+            const list = $('friend-list');
+            list.replaceChildren();
+            $('friend-empty').hidden = friends.size > 0;
+            for (const f of friends.values()) {
+                const el = document.createElement('div');
+                el.className = 'friend' + (f.id === activeId ? ' active' : '');
+                const av = document.createElement('div');
+                av.className = 'mini-avatar';
+                av.innerText = f.username.charAt(0).toUpperCase();
+                const name = document.createElement('div');
+                name.className = 'name';
+                name.innerText = f.username;
+                el.append(av, name);
+                const n = unreadCount(f.id);
+                if (n > 0 && f.id !== activeId) {
+                    const badge = document.createElement('div');
+                    badge.className = 'badge';
+                    badge.innerText = n > 99 ? '99+' : String(n);
+                    el.appendChild(badge);
+                }
+                el.addEventListener('click', () => openDm(f.id));
+                list.appendChild(el);
+            }
+
+            // Requests (incoming + outgoing)
+            const req = $('req-list');
+            req.replaceChildren();
+            $('req-section').hidden = incoming.length === 0 && outgoing.length === 0;
+            for (const u of incoming) {
+                req.appendChild(nameRow(u, [
+                    ['Accept', false, () => relAction('accept', { user_id: u.id })],
+                    ['Decline', true, () => relAction('decline', { user_id: u.id })],
+                ]));
+            }
+            for (const u of outgoing) {
+                const row = nameRow({ username: `${u.username} (sent)` }, [
+                    ['Cancel', true, () => relAction('remove', { user_id: u.id })],
+                ]);
+                req.appendChild(row);
+            }
+
+            // Blocked
+            const bl = $('blocked-list');
+            bl.replaceChildren();
+            $('blocked-section').hidden = blocked.length === 0;
+            for (const u of blocked) {
+                bl.appendChild(nameRow(u, [['Unblock', true, () => relAction('unblock', { user_id: u.id })]]));
+            }
+        }
+
+        async function relAction(action, payload) {
+            try {
+                await api('relationship', { action, ...payload });
+            } catch (e) {
+                alert(e.message);
+            }
+            await sync();
+        }
+
+        $('add-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const name = $('addName').value.trim();
+            const msg = $('add-msg');
+            if (!name) return;
+            msg.className = 'side-msg';
+            msg.innerText = '';
+            try {
+                await api('relationship', { action: 'send_request', username: name });
+                $('addName').value = '';
+                msg.className = 'side-msg ok';
+                msg.innerText = 'Request sent.';
+                await sync();
+            } catch (err) {
+                msg.className = 'side-msg err';
+                msg.innerText = err.message;
+            }
+        });
+
+        // --- Conversation pane ---
+        function dmBubble(m) {
+            const peer = friends.get(m.peerId) || peers.get(m.peerId);
+            if (m.text === null) {
+                return bubble(m.mine ? null : (peer ? peer.username : 'Unknown'),
+                    '🔒 [Could not decrypt this message]', 'msg-other msg-error', m.ts);
+            }
+            return m.mine
+                ? bubble(null, m.text, 'msg-self', m.ts)
+                : bubble(peer ? peer.username : 'Unknown', m.text, 'msg-other', m.ts);
+        }
+
+        function openDm(id) {
+            const f = friends.get(id);
+            if (!f) return;
+            activeId = id;
+            $('chat-title').innerText = f.username;
+            $('chat-sub').innerText = '';
+            fingerprint(f.public_key).then(fp => {
+                if (activeId === id) $('chat-sub').innerText = 'Safety number: ' + fp;
+            });
+            $('chat-actions').hidden = false;
+            $('dm-input').hidden = false;
+            $('app-shell').classList.add('chat-open');
+
+            const box = $('app-messages');
+            box.classList.remove('empty');
+            box.replaceChildren();
+            for (const m of conv(id)) box.appendChild(dmBubble(m));
+            box.scrollTop = box.scrollHeight;
+
+            markRead(id);
+            renderSidebar();
+            $('dmText').focus();
+        }
+
+        function closeDm() {
+            activeId = null;
+            $('chat-title').innerText = 'Welcome';
+            $('chat-sub').innerText = '';
+            $('chat-actions').hidden = true;
+            $('dm-input').hidden = true;
+            $('app-shell').classList.remove('chat-open');
+            const box = $('app-messages');
+            box.classList.add('empty');
+            box.replaceChildren();
+            box.innerText = 'Pick a friend on the left to start an encrypted conversation.';
+            renderSidebar();
+        }
+
+        async function sendDm() {
+            if (!activeId) return;
+            const input = $('dmText');
+            const text = input.value.trim();
+            if (!text) return;
+            if (enc.encode(text).length > 8000) return alert('Message too long.');
+            const peerId = activeId;
+            input.value = '';
+
+            try {
+                const ts = Date.now();
+                const key = await dmKey(peerId);
+                const iv = crypto.getRandomValues(new Uint8Array(12));
+                const ct = await crypto.subtle.encrypt(
+                    { name: "AES-GCM", iv, additionalData: dmAAD(currentUser.id, peerId, ts) }, key, enc.encode(text)
+                );
+                await api('send_dm', {
+                    recipient_id: peerId,
+                    iv: bytesToB64(iv),
+                    ciphertext: bytesToB64(new Uint8Array(ct)),
+                    ts
+                });
+                await sync(); // our own message comes back through sync, in server order
+            } catch (e) {
+                input.value = text; // let them retry
+                const box = $('app-messages');
+                const el = document.createElement('div');
+                el.style.alignSelf = 'center';
+                el.style.fontSize = '0.85rem';
+                el.style.color = 'var(--danger)';
+                el.innerText = e.message || 'Failed to send.';
+                box.appendChild(el);
+                box.scrollTop = box.scrollHeight;
+            }
+        }
+
+        $('dmSend').addEventListener('click', sendDm);
+        $('dmText').addEventListener('keypress', (e) => { if (e.key === 'Enter') sendDm(); });
+        $('backBtn').addEventListener('click', closeDm);
+
+        $('removeBtn').addEventListener('click', async () => {
+            const f = friends.get(activeId);
+            if (!f || !confirm(`Remove ${f.username} from your friends?`)) return;
+            await relAction('remove', { user_id: f.id });
+        });
+        $('blockBtn').addEventListener('click', async () => {
+            const f = friends.get(activeId);
+            if (!f || !confirm(`Block ${f.username}? They won't be told, and their messages will be dropped.`)) return;
+            await relAction('block', { user_id: f.id });
+        });
+
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible' && currentUser) {
+                if (activeId) { markRead(activeId); renderSidebar(); }
+                sync();
+            }
+        });
+
+        async function enterApp(user, privateKey) {
+            currentUser = user;
+            myPrivateKey = privateKey;
+            $('avatar').innerText = user.username.charAt(0).toUpperCase();
+            $('user-name').innerText = user.username;
+            $('user-fp').innerText = await fingerprint(user.public_key);
+            $('gate').style.display = 'none';
+            $('app-shell').style.display = 'flex';
+            await sync();
+            syncTimer = setInterval(sync, SYNC_MS);
         }
 
         // --- Boot: resume an existing session if this device holds that account's key ---
