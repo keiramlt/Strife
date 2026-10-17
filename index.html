@@ -269,7 +269,7 @@
             const input = document.getElementById('messageInput');
             const text = input.value.trim();
             if (!text) return;
-
+            if (enc.encode(text).length > 8000) return alert("Message too long.");
             input.value = '';
             appendMessage(currentUser, text, 'msg-self');
 
