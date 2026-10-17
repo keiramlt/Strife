@@ -65,8 +65,8 @@
         .notice { font-size: 0.8rem; color: var(--warn); margin-bottom: 1.2rem; line-height: 1.4; }
         .hint { font-size: 0.8rem; color: var(--text-muted); margin-bottom: 1.2rem; line-height: 1.4; }
         .error { color: var(--danger); font-size: 0.9rem; margin-bottom: 1rem; min-height: 1.2em; }
-        #local-accounts { margin-bottom: 1.2rem; }
-        #local-accounts .label { font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.4rem; }
+        #local-accounts { width: 220px; flex-shrink: 0; border-left: 1px solid #333; padding-left: 2rem; }
+        #local-accounts .label { font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.6rem; }
         .acct { display: flex; gap: 0.4rem; margin-bottom: 0.4rem; }
         .acct .pick { background: #2a2a2a; text-align: left; font-weight: normal; padding: 0.6rem 0.8rem; }
         .acct .pick:hover { background: #333; }
@@ -153,6 +153,8 @@
             #backBtn { display: inline-block; }
             .message { max-width: 88%; }
             .card { padding: 1.5rem; }
+            .card.with-side { flex-direction: column; gap: 1.2rem; }
+            #local-accounts { width: auto; border-left: none; padding-left: 0; border-top: 1px solid #333; padding-top: 1.2rem; }
         }
     </style>
 </head>
@@ -160,64 +162,67 @@
 
     <!-- Start screen: guest rooms or account -->
     <div id="gate">
-        <div class="card">
-            <h1>Strife</h1>
+        <div class="card" id="card">
+            <div class="card-main">
+                <h1>Strife</h1>
 
-            <div class="tabs">
-                <button type="button" class="tab active" id="tab-guest">Guest</button>
-                <button type="button" class="tab" id="tab-login">Log in</button>
-                <button type="button" class="tab" id="tab-register">Register</button>
-            </div>
+                <div class="tabs">
+                    <button type="button" class="tab active" id="tab-guest">Guest</button>
+                    <button type="button" class="tab" id="tab-login">Log in</button>
+                    <button type="button" class="tab" id="tab-register">Register</button>
+                </div>
 
-            <!-- Guest: shared-passphrase room, no account -->
-            <form id="guest-form">
-                <p class="hint">No account needed. Share the room code and passphrase with the people you want to talk to.</p>
-                <div class="input-group">
-                    <label for="guestName">Display name</label>
-                    <input type="text" id="guestName" maxlength="32" placeholder="e.g. Keira" autocomplete="off">
-                </div>
-                <div class="input-group">
-                    <label for="roomCode">Room Code</label>
-                    <input type="text" id="roomCode" placeholder="e.g. session-17625843" autocomplete="off">
-                </div>
-                <div class="input-group">
-                    <label for="encKey">Encryption Key (Password)</label>
-                    <input type="password" id="encKey" placeholder="use a long, random passphrase" autocomplete="off">
-                </div>
-                <div class="error" id="guest-error"></div>
-                <button type="submit" id="joinBtn">Join Room</button>
-            </form>
-
-            <!-- Account: login / register -->
-            <div id="account-area" style="display:none;">
-                <div id="local-accounts" style="display:none;">
-                    <div class="label">Accounts on this device</div>
-                    <div id="local-accounts-list"></div>
-                </div>
-                <p class="hint">An account lets you add friends and send dedicated direct messages.</p>
-                <form id="auth-form">
+                <!-- Guest: shared-passphrase room, no account -->
+                <form id="guest-form">
+                    <p class="hint">No account needed. Share the room code and passphrase with the people you want to talk to.</p>
                     <div class="input-group">
-                        <label for="username">Username</label>
-                        <input type="text" id="username" maxlength="32" autocomplete="username">
+                        <label for="guestName">Display name</label>
+                        <input type="text" id="guestName" maxlength="32" placeholder="e.g. Keira" autocomplete="off">
                     </div>
                     <div class="input-group">
-                        <label for="password">Password</label>
-                        <input type="password" id="password" autocomplete="current-password">
+                        <label for="roomCode">Room Code</label>
+                        <input type="text" id="roomCode" placeholder="e.g. session-17625843" autocomplete="off">
                     </div>
-                    <div class="input-group" id="confirm-group" style="display:none;">
-                        <label for="password2">Confirm password</label>
-                        <input type="password" id="password2" autocomplete="new-password">
+                    <div class="input-group">
+                        <label for="encKey">Encryption Key (Password)</label>
+                        <input type="password" id="encKey" placeholder="use a long, random passphrase" autocomplete="off">
                     </div>
-                    <div class="notice" id="register-notice" style="display:none;">
-                        Your password also protects your encryption key. The server cannot reset or recover it:
-                        if you forget it, your messages are permanently lost.
-                    </div>
-                    <div class="error" id="auth-error"></div>
-                    <button type="submit" id="authBtn">Log in</button>
+                    <div class="error" id="guest-error"></div>
+                    <button type="submit" id="joinBtn">Join Room</button>
                 </form>
+
+                <!-- Account: login / register -->
+                <div id="account-area" style="display:none;">
+                    <p class="hint">An account lets you add friends and send dedicated direct messages.</p>
+                    <form id="auth-form">
+                        <div class="input-group">
+                            <label for="username">Username</label>
+                            <input type="text" id="username" maxlength="32" autocomplete="username">
+                        </div>
+                        <div class="input-group">
+                            <label for="password">Password</label>
+                            <input type="password" id="password" autocomplete="current-password">
+                        </div>
+                        <div class="input-group" id="confirm-group" style="display:none;">
+                            <label for="password2">Confirm password</label>
+                            <input type="password" id="password2" autocomplete="new-password">
+                        </div>
+                        <div class="notice" id="register-notice" style="display:none;">
+                            Your password also protects your encryption key. The server cannot reset or recover it:
+                            if you forget it, your messages are permanently lost.
+                        </div>
+                        <div class="error" id="auth-error"></div>
+                        <button type="submit" id="authBtn">Log in</button>
+                    </form>
+                </div>
+            </div><!-- /card-main -->
+
+            <div id="local-accounts" style="display:none;">
+                <div class="label">Accounts on this device</div>
+                <div id="local-accounts-list"></div>
             </div>
-        </div>
-    </div>
+        </div><!-- /card -->
+    </div><!-- /gate -->
 
     <!-- Guest chat -->
     <div id="guest-screen">
@@ -295,8 +300,8 @@
                 <input type="text" id="dmText" maxlength="4000" placeholder="Type an encrypted message..." autocomplete="off">
                 <button id="dmSend">Send</button>
             </div>
-        </div>
-    </div>
+        </div><!-- /main-pane -->
+    </div><!-- /app-shell -->
 
     <script>
         // --- Config ---
@@ -360,7 +365,9 @@
             $('account-area').style.display = isGuest ? 'none' : 'block';
             $('confirm-group').style.display = isReg ? 'block' : 'none';
             $('register-notice').style.display = isReg ? 'block' : 'none';
-            $('local-accounts').style.display = (!isGuest && !isReg && hasLocalAccounts) ? 'block' : 'none';
+            const showSide = !isGuest && !isReg && hasLocalAccounts;
+            $('local-accounts').style.display = showSide ? 'block' : 'none';
+            $('card').classList.toggle('with-side', showSide);
             $('password').autocomplete = isReg ? 'new-password' : 'current-password';
             $('authBtn').innerText = isReg ? 'Create account' : 'Log in';
             $('auth-error').innerText = '';
