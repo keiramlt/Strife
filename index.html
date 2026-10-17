@@ -875,6 +875,13 @@
             outgoing = s.outgoing;
             blocked = s.blocked;
             blockedIds = new Set(blocked.map(b => b.id));
+            // Removing or blocking someone deletes the conversation server-side; drop our copy too.
+            for (const id of [...convs.keys()]) {
+                if (friends.has(id)) continue;
+                convs.delete(id);
+                readMarks.delete(id);
+                try { localStorage.removeItem(readKey(id)); } catch (e) {}
+            }
             if (activeId && !friends.has(activeId)) closeDm();
         }
 
