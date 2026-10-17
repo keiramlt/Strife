@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>E2EE Chat</title>
+    <title>Strife</title>
     <style>
         :root {
             --bg-color: #121212;
@@ -30,17 +30,6 @@
             overflow: hidden;
         }
 
-        /* --- Login Screen --- */
-        #login-screen {
-            background-color: var(--panel-bg);
-            padding: 2.5rem;
-            border-radius: 12px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-            width: 100%;
-            max-width: 400px;
-            transition: opacity 0.4s ease;
-        }
-
         h1 { text-align: center; margin-bottom: 1.5rem; color: var(--accent); }
 
         .input-group { margin-bottom: 1.2rem; }
@@ -59,105 +48,236 @@
         button:hover { background-color: var(--accent-hover); }
         button:disabled { opacity: 0.6; cursor: default; }
 
-        /* --- Chat Screen --- */
-        #chat-screen {
+        /* --- Start screen --- */
+        #gate {
+            background-color: var(--panel-bg);
+            padding: 2.5rem;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            width: 100%;
+            max-width: 420px;
+            max-height: 100vh;
+            overflow-y: auto;
+        }
+        .tabs { display: flex; gap: 0.5rem; margin-bottom: 1.5rem; }
+        .tab { background: transparent; border: 1px solid #333; color: var(--text-muted); padding: 0.6rem; font-size: 0.9rem; }
+        .tab:hover { background: #2a2a2a; }
+        .tab.active { background: var(--accent); border-color: var(--accent); color: white; }
+        .notice { font-size: 0.8rem; color: var(--warn); margin-bottom: 1.2rem; line-height: 1.4; }
+        .hint { font-size: 0.8rem; color: var(--text-muted); margin-bottom: 1.2rem; line-height: 1.4; }
+        .error { color: var(--danger); font-size: 0.9rem; margin-bottom: 1rem; min-height: 1.2em; }
+        #local-accounts { margin-bottom: 1.2rem; }
+        #local-accounts .label { font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.4rem; }
+        .acct { display: flex; gap: 0.4rem; margin-bottom: 0.4rem; }
+        .acct .pick { background: #2a2a2a; text-align: left; font-weight: normal; padding: 0.6rem 0.8rem; }
+        .acct .pick:hover { background: #333; }
+        .acct .forget { width: auto; background: transparent; border: 1px solid #333; color: var(--danger); padding: 0.6rem 0.8rem; }
+
+        /* --- Shared chat pieces --- */
+        .chat-header {
+            padding: 1.2rem; background-color: #1a1a1a; display: flex;
+            justify-content: space-between; align-items: center; border-bottom: 1px solid #333;
+        }
+        .chat-header h2 { font-size: 1.2rem; margin: 0; color: var(--accent); }
+        .chat-messages { flex: 1; padding: 1.5rem; overflow-y: auto; display: flex; flex-direction: column; gap: 1rem; }
+        .message { max-width: 75%; padding: 0.8rem 1.2rem; border-radius: 15px; position: relative; line-height: 1.4; word-wrap: break-word; }
+        .msg-self { background-color: var(--msg-self); align-self: flex-end; border-bottom-right-radius: 2px; }
+        .msg-other { background-color: var(--msg-other); align-self: flex-start; border-bottom-left-radius: 2px; }
+        .msg-error { background-color: transparent; border: 1px solid var(--danger); color: var(--danger); }
+        .msg-sender { font-size: 0.75rem; margin-bottom: 0.3rem; opacity: 0.8; font-weight: bold; }
+        .input-area { padding: 1rem; background-color: #1a1a1a; border-top: 1px solid #333; display: flex; gap: 0.5rem; }
+        .input-area input {
+            flex: 1; padding: 0.8rem; border-radius: 20px; border: 1px solid #333;
+            background-color: #2a2a2a; color: white; outline: none;
+        }
+        .input-area button { width: auto; padding: 0.8rem 1.5rem; border-radius: 20px; }
+        .outline-btn { width: auto; padding: 0.5rem 1rem; background: transparent; border: 1px solid var(--danger); color: var(--danger); }
+
+        /* --- Guest chat --- */
+        #guest-screen {
             display: none; width: 100%; height: 100%; flex-direction: column;
             max-width: 900px; background-color: var(--panel-bg);
         }
 
-        #chat-header {
-            padding: 1.2rem; background-color: #1a1a1a; display: flex;
-            justify-content: space-between; align-items: center; border-bottom: 1px solid #333;
+        /* --- Account app shell --- */
+        #app-shell { display: none; width: 100%; height: 100%; max-width: 1100px; background-color: var(--panel-bg); }
+        #sidebar { width: 280px; border-right: 1px solid #333; background: #1a1a1a; display: flex; flex-direction: column; }
+        #user-header { padding: 1rem; border-bottom: 1px solid #333; display: flex; align-items: center; gap: 0.8rem; }
+        #avatar {
+            width: 40px; height: 40px; border-radius: 50%; background: var(--accent);
+            display: flex; align-items: center; justify-content: center; font-weight: bold; flex-shrink: 0;
         }
-        #chat-header h2 { font-size: 1.2rem; margin: 0; color: var(--accent); }
-
-        #chat-messages {
-            flex: 1; padding: 1.5rem; overflow-y: auto; display: flex; flex-direction: column; gap: 1rem;
-        }
-
-        .message { max-width: 75%; padding: 0.8rem 1.2rem; border-radius: 15px; position: relative; line-height: 1.4; word-wrap: break-word;}
-        .msg-self { background-color: var(--msg-self); align-self: flex-end; border-bottom-right-radius: 2px; }
-        .msg-other { background-color: var(--msg-other); align-self: flex-start; border-bottom-left-radius: 2px; }
-        .msg-error { background-color: transparent; border: 1px solid var(--danger); color: var(--danger); }
-
-        .msg-sender { font-size: 0.75rem; margin-bottom: 0.3rem; opacity: 0.8; font-weight: bold; }
-
-        #chat-input-area {
-            padding: 1rem; background-color: #1a1a1a; border-top: 1px solid #333; display: flex; gap: 0.5rem;
-        }
-        #chat-input-area input {
-            flex: 1; padding: 0.8rem; border-radius: 20px; border: 1px solid #333;
-            background-color: #2a2a2a; color: white; outline: none;
-        }
-        #chat-input-area button { width: auto; padding: 0.8rem 1.5rem; border-radius: 20px; }
+        #user-meta { flex: 1; min-width: 0; }
+        #user-name { font-weight: bold; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        #user-fp { font-size: 0.7rem; color: var(--text-muted); font-family: monospace; }
+        #logoutBtn { width: auto; padding: 0.4rem 0.8rem; font-size: 0.8rem; background: transparent; border: 1px solid var(--danger); color: var(--danger); }
+        #sidebar-body { flex: 1; padding: 1rem; color: var(--text-muted); font-size: 0.85rem; overflow-y: auto; }
+        #main-pane { flex: 1; display: flex; flex-direction: column; }
+        #app-messages { align-items: center; justify-content: center; color: var(--text-muted); text-align: center; }
     </style>
 </head>
 <body>
 
-    <div id="login-screen">
-        <h1>E2EE Chat</h1>
-        <div class="input-group">
-            <label for="username">Username</label>
-            <input type="text" id="username" maxlength="32" placeholder="e.g. Keira" autocomplete="off">
+    <!-- Start screen: guest rooms or account -->
+    <div id="gate">
+        <h1>Strife</h1>
+
+        <div class="tabs">
+            <button type="button" class="tab active" id="tab-guest">Guest</button>
+            <button type="button" class="tab" id="tab-login">Log in</button>
+            <button type="button" class="tab" id="tab-register">Register</button>
         </div>
-        <div class="input-group">
-            <label for="roomCode">Room Code</label>
-            <input type="text" id="roomCode" placeholder="e.g. session-17625843" autocomplete="off">
+
+        <!-- Guest: shared-passphrase room, no account -->
+        <form id="guest-form">
+            <p class="hint">No account needed. Share the room code and passphrase with the people you want to talk to.</p>
+            <div class="input-group">
+                <label for="guestName">Display name</label>
+                <input type="text" id="guestName" maxlength="32" placeholder="e.g. Keira" autocomplete="off">
+            </div>
+            <div class="input-group">
+                <label for="roomCode">Room Code</label>
+                <input type="text" id="roomCode" placeholder="e.g. session-17625843" autocomplete="off">
+            </div>
+            <div class="input-group">
+                <label for="encKey">Encryption Key (Password)</label>
+                <input type="password" id="encKey" placeholder="use a long, random passphrase" autocomplete="off">
+            </div>
+            <div class="error" id="guest-error"></div>
+            <button type="submit" id="joinBtn">Join Room</button>
+        </form>
+
+        <!-- Account: login / register -->
+        <div id="account-area" style="display:none;">
+            <div id="local-accounts" style="display:none;">
+                <div class="label">Accounts on this device</div>
+                <div id="local-accounts-list"></div>
+            </div>
+            <p class="hint">An account lets you add friends and send dedicated direct messages.</p>
+            <form id="auth-form">
+                <div class="input-group">
+                    <label for="username">Username</label>
+                    <input type="text" id="username" maxlength="32" autocomplete="username">
+                </div>
+                <div class="input-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" autocomplete="current-password">
+                </div>
+                <div class="input-group" id="confirm-group" style="display:none;">
+                    <label for="password2">Confirm password</label>
+                    <input type="password" id="password2" autocomplete="new-password">
+                </div>
+                <div class="notice" id="register-notice" style="display:none;">
+                    Your password also protects your encryption key. The server cannot reset or recover it:
+                    if you forget it, your messages are permanently unreadable.
+                </div>
+                <div class="error" id="auth-error"></div>
+                <button type="submit" id="authBtn">Log in</button>
+            </form>
         </div>
-        <div class="input-group">
-            <label for="encKey">Encryption Key (Password)</label>
-            <input type="password" id="encKey" placeholder="use a long, random passphrase">
-        </div>
-        <button id="joinBtn">Join Room</button>
     </div>
 
-    <div id="chat-screen">
-        <div id="chat-header">
+    <!-- Guest chat -->
+    <div id="guest-screen">
+        <div class="chat-header">
             <h2 id="room-title">Room: ...</h2>
-            <button id="leaveBtn" style="width: auto; padding: 0.5rem 1rem; background: transparent; border: 1px solid #cf6679; color: #cf6679;">Leave</button>
+            <button id="leaveBtn" class="outline-btn">Leave</button>
         </div>
-        <div id="chat-messages"></div>
-        <div id="chat-input-area">
+        <div class="chat-messages" id="guest-messages"></div>
+        <div class="input-area">
             <input type="text" id="messageInput" maxlength="4000" placeholder="Type an encrypted message..." autocomplete="off">
             <button id="sendBtn">Send</button>
         </div>
     </div>
 
+    <!-- Account app shell (DMs arrive in the next step) -->
+    <div id="app-shell">
+        <div id="sidebar">
+            <div id="user-header">
+                <div id="avatar"></div>
+                <div id="user-meta">
+                    <div id="user-name"></div>
+                    <div id="user-fp"></div>
+                </div>
+                <button id="logoutBtn">Log out</button>
+            </div>
+            <div id="sidebar-body">Friends and rooms will appear here.</div>
+        </div>
+        <div id="main-pane">
+            <div class="chat-header"><h2>Welcome</h2></div>
+            <div class="chat-messages" id="app-messages">You're signed in. Direct messages are coming in the next step.</div>
+        </div>
+    </div>
+
     <script>
-        // --- State ---
-        const API = "https://kei.mt/chat/api.php";
-        let cryptoKey;
-        let currentUser;
-        let currentRoom;
-        let lastTime = 0;
-        let pollInterval;
-        const seen = new Set(); // anti-replay: authenticated (user|ts) tuples already shown
-        
-        // --- Crypto Utilities ---
+        // --- Config ---
+        const API = "https://kei.mt/chat/api.php"; // change if api.php moves
+        const PBKDF2_ITERATIONS = 600000;          // OWASP 2023+ guidance
+
         const enc = new TextEncoder();
         const dec = new TextDecoder();
+        const $ = (id) => document.getElementById(id);
 
+        // --- Byte helpers ---
         function b64ToBytes(b64) {
             const bin = atob(b64);
             const out = new Uint8Array(bin.length);
             for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
             return out;
         }
+        function bytesToB64(bytes) {
+            const u8 = bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes);
+            let s = '';
+            for (let i = 0; i < u8.length; i++) s += String.fromCharCode(u8[i]);
+            return btoa(s);
+        }
 
-        // Derive the AES key from the password + a RANDOM per-room salt fetched
-        // from the server. 600,000 PBKDF2 iterations (OWASP 2023+ guidance).
-        async function deriveKey(password, saltBytes) {
+        // =====================================================================
+        //  START SCREEN TABS
+        // =====================================================================
+        let mode = 'guest'; // 'guest' | 'login' | 'register'
+
+        function setMode(m) {
+            mode = m;
+            const isGuest = m === 'guest';
+            const isReg = m === 'register';
+            $('tab-guest').classList.toggle('active', isGuest);
+            $('tab-login').classList.toggle('active', m === 'login');
+            $('tab-register').classList.toggle('active', isReg);
+            $('guest-form').style.display = isGuest ? 'block' : 'none';
+            $('account-area').style.display = isGuest ? 'none' : 'block';
+            $('confirm-group').style.display = isReg ? 'block' : 'none';
+            $('register-notice').style.display = isReg ? 'block' : 'none';
+            $('local-accounts').style.display = (!isGuest && !isReg && hasLocalAccounts) ? 'block' : 'none';
+            $('password').autocomplete = isReg ? 'new-password' : 'current-password';
+            $('authBtn').innerText = isReg ? 'Create account' : 'Log in';
+            $('auth-error').innerText = '';
+            $('guest-error').innerText = '';
+        }
+        $('tab-guest').addEventListener('click', () => setMode('guest'));
+        $('tab-login').addEventListener('click', () => setMode('login'));
+        $('tab-register').addEventListener('click', () => setMode('register'));
+
+        // =====================================================================
+        //  GUEST ROOMS (shared passphrase, no account) - unchanged behaviour
+        // =====================================================================
+        let guestKey, guestUser, guestRoom;
+        let lastTime = 0;
+        let pollInterval;
+        const seen = new Set(); // anti-replay: authenticated (user|ts) tuples already shown
+
+        // Derive the AES key from the passphrase + a random per-room salt from the server.
+        async function deriveRoomKey(password, saltBytes) {
             const keyMaterial = await crypto.subtle.importKey(
                 "raw", enc.encode(password), { name: "PBKDF2" }, false, ["deriveKey"]
             );
             return await crypto.subtle.deriveKey(
-                { name: "PBKDF2", salt: saltBytes, iterations: 600000, hash: "SHA-256" },
+                { name: "PBKDF2", salt: saltBytes, iterations: PBKDF2_ITERATIONS, hash: "SHA-256" },
                 keyMaterial, { name: "AES-GCM", length: 256 }, false, ["encrypt", "decrypt"]
             );
         }
 
-        // Bind room + sender + timestamp into the cipher as additional authenticated
-        // data, so a forged username or tampered timestamp fails authentication.
+        // Bind room + sender + timestamp into the cipher so forged names/timestamps fail.
         function buildAAD(room, user, ts) {
             return enc.encode(JSON.stringify({ r: room, u: user, t: ts }));
         }
@@ -165,8 +285,8 @@
         async function encryptMessage(text, user, ts) {
             const iv = crypto.getRandomValues(new Uint8Array(12));
             const encrypted = await crypto.subtle.encrypt(
-                { name: "AES-GCM", iv: iv, additionalData: buildAAD(currentRoom, user, ts) },
-                cryptoKey, enc.encode(text)
+                { name: "AES-GCM", iv: iv, additionalData: buildAAD(guestRoom, user, ts) },
+                guestKey, enc.encode(text)
             );
             return { iv: Array.from(iv), ciphertext: Array.from(new Uint8Array(encrypted)) };
         }
@@ -174,8 +294,8 @@
         async function decryptMessage(ciphertextArray, ivArray, user, ts) {
             try {
                 const decrypted = await crypto.subtle.decrypt(
-                    { name: "AES-GCM", iv: new Uint8Array(ivArray), additionalData: buildAAD(currentRoom, user, ts) },
-                    cryptoKey, new Uint8Array(ciphertextArray)
+                    { name: "AES-GCM", iv: new Uint8Array(ivArray), additionalData: buildAAD(guestRoom, user, ts) },
+                    guestKey, new Uint8Array(ciphertextArray)
                 );
                 return dec.decode(decrypted);
             } catch (e) {
@@ -183,50 +303,48 @@
             }
         }
 
-        // --- UI & Event Listeners ---
-        document.getElementById('joinBtn').addEventListener('click', async () => {
-            const btn  = document.getElementById('joinBtn');
-            const user = document.getElementById('username').value.trim();
-            const room = document.getElementById('roomCode').value.trim();
-            const key  = document.getElementById('encKey').value;
+        $('guest-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn  = $('joinBtn');
+            const user = $('guestName').value.trim();
+            const room = $('roomCode').value.trim();
+            const key  = $('encKey').value;
+            $('guest-error').innerText = '';
 
-            if (!user || !room || !key) return alert("All fields are required.");
-            if (user.length > 32) return alert("Username too long (max 32).");
+            if (!user || !room || !key) return $('guest-error').innerText = 'All fields are required.';
+            if (user.length > 32) return $('guest-error').innerText = 'Display name too long (max 32).';
 
-            btn.disabled = true; btn.innerText = "Joining...";
+            btn.disabled = true; btn.innerText = 'Joining...';
             try {
-                // Fetch the random per-room salt before deriving the key.
                 const saltRes = await fetch(`${API}?room=${encodeURIComponent(room)}&action=salt`);
-                if (!saltRes.ok) throw new Error("salt fetch failed");
+                if (!saltRes.ok) throw new Error('salt fetch failed');
                 const { salt } = await saltRes.json();
-                if (!salt) throw new Error("no salt");
+                if (!salt) throw new Error('no salt');
 
-                currentUser = user;
-                currentRoom = room;
-                cryptoKey = await deriveKey(key, b64ToBytes(salt));
-            } catch (e) {
-                btn.disabled = false; btn.innerText = "Join Room";
-                return alert("Could not reach the server. Make sure it's running over HTTPS.");
+                guestUser = user;
+                guestRoom = room;
+                guestKey = await deriveRoomKey(key, b64ToBytes(salt));
+            } catch (err) {
+                btn.disabled = false; btn.innerText = 'Join Room';
+                return $('guest-error').innerText = "Could not reach the server. Make sure it's running over HTTPS.";
             }
 
-            document.getElementById('room-title').innerText = `Room: ${room}`;
-            document.getElementById('login-screen').style.display = 'none';
-            document.getElementById('chat-screen').style.display = 'flex';
-
+            $('room-title').innerText = `Room: ${room}`;
+            $('gate').style.display = 'none';
+            $('guest-screen').style.display = 'flex';
             startPolling();
         });
 
-        document.getElementById('leaveBtn').addEventListener('click', () => {
+        $('leaveBtn').addEventListener('click', () => {
             clearInterval(pollInterval);
             location.reload();
         });
 
-        document.getElementById('sendBtn').addEventListener('click', sendMessage);
-        document.getElementById('messageInput').addEventListener('keypress', (e) => {
+        $('sendBtn').addEventListener('click', sendMessage);
+        $('messageInput').addEventListener('keypress', (e) => {
             if (e.key === 'Enter') sendMessage();
         });
 
-        // --- Chat Logic (PHP Polling) ---
         function startPolling() {
             appendSystemMessage("Connected. Messages are end-to-end encrypted in your browser.");
             pollInterval = setInterval(fetchMessages, 2000);
@@ -235,23 +353,19 @@
 
         async function fetchMessages() {
             try {
-                const res = await fetch(`${API}?room=${encodeURIComponent(currentRoom)}&last_time=${lastTime}`);
+                const res = await fetch(`${API}?room=${encodeURIComponent(guestRoom)}&last_time=${lastTime}`);
                 const messages = await res.json();
                 if (!Array.isArray(messages)) return;
 
                 for (let data of messages) {
                     lastTime = Math.max(lastTime, data.timestamp || 0);
+                    if (data.user === guestUser) continue;
 
-                    if (data.user === currentUser) continue;
-
-                    // Anti-replay: skip any authenticated (user|ts) we've already shown.
                     const tag = `${data.user}|${data.ts}`;
                     if (seen.has(tag)) continue;
 
                     const plaintext = await decryptMessage(data.ciphertext, data.iv, data.user, data.ts);
-
                     if (plaintext === null) {
-                        // Could be a wrong key, or a forged sender / tampered message.
                         appendMessage(data.user, "🔒 [Unverified — wrong key or tampered message]", 'msg-other msg-error');
                     } else {
                         seen.add(tag);
@@ -264,19 +378,19 @@
         }
 
         async function sendMessage() {
-            const input = document.getElementById('messageInput');
+            const input = $('messageInput');
             const text = input.value.trim();
             if (!text) return;
             if (enc.encode(text).length > 8000) return alert("Message too long.");
             input.value = '';
-            appendMessage(currentUser, text, 'msg-self');
+            appendMessage(guestUser, text, 'msg-self');
 
-            const ts = Date.now(); // authenticated timestamp, bound into the cipher
-            const { iv, ciphertext } = await encryptMessage(text, currentUser, ts);
-            const payload = { user: currentUser, iv, ciphertext, ts };
+            const ts = Date.now();
+            const { iv, ciphertext } = await encryptMessage(text, guestUser, ts);
+            const payload = { user: guestUser, iv, ciphertext, ts };
 
             try {
-                const res = await fetch(`${API}?room=${encodeURIComponent(currentRoom)}`, {
+                const res = await fetch(`${API}?room=${encodeURIComponent(guestRoom)}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload)
@@ -287,9 +401,9 @@
             }
         }
 
-        // --- Helper Functions (innerText only — no HTML injection) ---
+        // innerText only — no HTML injection
         function appendMessage(user, text, className) {
-            const box = document.getElementById('chat-messages');
+            const box = $('guest-messages');
             const el = document.createElement('div');
             el.className = `message ${className}`;
 
@@ -307,7 +421,7 @@
         }
 
         function appendSystemMessage(text, isError = false) {
-            const box = document.getElementById('chat-messages');
+            const box = $('guest-messages');
             const el = document.createElement('div');
             el.style.alignSelf = 'center';
             el.style.fontSize = '0.85rem';
@@ -316,6 +430,239 @@
             box.appendChild(el);
             box.scrollTop = box.scrollHeight;
         }
+
+        // =====================================================================
+        //  ACCOUNTS (optional)
+        // =====================================================================
+        let currentUser = null;   // { id, username, public_key }
+        let myPrivateKey = null;  // non-extractable ECDH CryptoKey
+        let hasLocalAccounts = false;
+
+        async function api(action, body) {
+            const res = await fetch(`${API}?action=${action}`, {
+                method: body ? 'POST' : 'GET',
+                credentials: 'include',
+                headers: body ? { 'Content-Type': 'application/json' } : {},
+                body: body ? JSON.stringify(body) : undefined
+            });
+            let data = {};
+            try { data = await res.json(); } catch (e) {}
+            if (!res.ok) throw new Error(data.error || 'Request failed');
+            return data;
+        }
+
+        // One password yields two INDEPENDENT values:
+        //  - authSecret: sent to the server (which stores only a hash of it)
+        //  - wrapKey:    unlocks the private-key backup; never leaves the browser
+        function pbkdf2Material(password) {
+            return crypto.subtle.importKey("raw", enc.encode(password), { name: "PBKDF2" }, false, ["deriveBits", "deriveKey"]);
+        }
+
+        async function deriveAuthSecret(password, username) {
+            const material = await pbkdf2Material(password);
+            const salt = enc.encode('e2ee-chat/auth/v1|' + username.toLowerCase());
+            const bits = await crypto.subtle.deriveBits(
+                { name: "PBKDF2", salt, iterations: PBKDF2_ITERATIONS, hash: "SHA-256" }, material, 256
+            );
+            return bytesToB64(new Uint8Array(bits));
+        }
+
+        async function deriveWrapKey(password, saltBytes) {
+            const material = await pbkdf2Material(password);
+            return crypto.subtle.deriveKey(
+                { name: "PBKDF2", salt: saltBytes, iterations: PBKDF2_ITERATIONS, hash: "SHA-256" },
+                material, { name: "AES-GCM", length: 256 }, false, ["encrypt", "decrypt"]
+            );
+        }
+
+        function backupAAD(username) {
+            return enc.encode('e2ee-chat/key-backup/v1|' + username.toLowerCase());
+        }
+
+        async function generateIdentity() {
+            // Extractable only long enough to wrap a backup; the stored copy is non-extractable.
+            const kp = await crypto.subtle.generateKey({ name: "ECDH", namedCurve: "P-256" }, true, ["deriveKey", "deriveBits"]);
+            const pkcs8 = new Uint8Array(await crypto.subtle.exportKey("pkcs8", kp.privateKey));
+            const pub = new Uint8Array(await crypto.subtle.exportKey("raw", kp.publicKey));
+            return { pkcs8, pub };
+        }
+
+        function importPrivate(pkcs8) {
+            return crypto.subtle.importKey("pkcs8", pkcs8, { name: "ECDH", namedCurve: "P-256" }, false, ["deriveKey", "deriveBits"]);
+        }
+
+        async function fingerprint(pubB64) {
+            const hash = new Uint8Array(await crypto.subtle.digest("SHA-256", b64ToBytes(pubB64)));
+            return Array.from(hash.slice(0, 8)).map(b => b.toString(16).padStart(2, '0')).join('').replace(/(.{4})/g, '$1 ').trim();
+        }
+
+        // IndexedDB: one record per account, so many accounts can share a device
+        function openDb() {
+            return new Promise((resolve, reject) => {
+                const r = indexedDB.open('e2ee-chat', 1);
+                r.onupgradeneeded = () => r.result.createObjectStore('identities', { keyPath: 'userId' });
+                r.onsuccess = () => resolve(r.result);
+                r.onerror = () => reject(r.error);
+            });
+        }
+        async function idbRun(txMode, fn) {
+            const db = await openDb();
+            return new Promise((resolve, reject) => {
+                const tx = db.transaction('identities', txMode);
+                const req = fn(tx.objectStore('identities'));
+                tx.oncomplete = () => resolve(req.result);
+                tx.onerror = () => reject(tx.error);
+            });
+        }
+        const idbPut = (rec) => idbRun('readwrite', s => s.put(rec));
+        const idbGet = (id) => idbRun('readonly', s => s.get(id));
+        const idbAll = () => idbRun('readonly', s => s.getAll());
+        const idbDelete = (id) => idbRun('readwrite', s => s.delete(id));
+
+        async function doRegister(username, password) {
+            const authSecret = await deriveAuthSecret(password, username);
+            const { pkcs8, pub } = await generateIdentity();
+
+            const salt = crypto.getRandomValues(new Uint8Array(16));
+            const iv = crypto.getRandomValues(new Uint8Array(12));
+            const wrapKey = await deriveWrapKey(password, salt);
+            const ct = await crypto.subtle.encrypt(
+                { name: "AES-GCM", iv, additionalData: backupAAD(username) }, wrapKey, pkcs8
+            );
+
+            const r = await api('register', {
+                username,
+                auth: authSecret,
+                public_key: bytesToB64(pub),
+                backup: { ct: bytesToB64(new Uint8Array(ct)), iv: bytesToB64(iv), salt: bytesToB64(salt) }
+            });
+
+            const privateKey = await importPrivate(pkcs8);
+            pkcs8.fill(0);
+            await idbPut({ userId: r.user.id, username: r.user.username, publicKey: r.user.public_key, privateKey });
+            return { user: r.user, privateKey };
+        }
+
+        async function doLogin(username, password) {
+            const authSecret = await deriveAuthSecret(password, username);
+            const r = await api('login', { username, auth: authSecret });
+
+            let rec = await idbGet(r.user.id);
+            if (!rec || rec.publicKey !== r.user.public_key) {
+                // New device (or cleared storage): restore the key from the encrypted backup.
+                try {
+                    const wrapKey = await deriveWrapKey(password, b64ToBytes(r.backup.salt));
+                    const pkcs8 = new Uint8Array(await crypto.subtle.decrypt(
+                        { name: "AES-GCM", iv: b64ToBytes(r.backup.iv), additionalData: backupAAD(r.user.username) },
+                        wrapKey, b64ToBytes(r.backup.ct)
+                    ));
+                    const privateKey = await importPrivate(pkcs8);
+                    pkcs8.fill(0);
+                    rec = { userId: r.user.id, username: r.user.username, publicKey: r.user.public_key, privateKey };
+                    await idbPut(rec);
+                } catch (e) {
+                    await api('logout', {}).catch(() => {});
+                    throw new Error("Could not unlock your encryption key backup.");
+                }
+            }
+            return { user: r.user, privateKey: rec.privateKey };
+        }
+
+        $('auth-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = $('authBtn');
+            const username = $('username').value.trim();
+            const password = $('password').value;
+            $('auth-error').innerText = '';
+
+            if (!/^[A-Za-z0-9_.-]{3,32}$/.test(username)) {
+                return $('auth-error').innerText = 'Username must be 3-32 characters: letters, numbers, _ . -';
+            }
+            if (mode === 'register') {
+                if (password.length < 10) return $('auth-error').innerText = 'Use a password of at least 10 characters.';
+                if (password !== $('password2').value) return $('auth-error').innerText = 'Passwords do not match.';
+            }
+
+            btn.disabled = true;
+            btn.innerText = mode === 'register' ? 'Creating account...' : 'Logging in...';
+            try {
+                const result = mode === 'register' ? await doRegister(username, password) : await doLogin(username, password);
+                $('password').value = ''; $('password2').value = '';
+                await enterApp(result.user, result.privateKey);
+            } catch (err) {
+                $('auth-error').innerText = err.message || 'Something went wrong.';
+            } finally {
+                btn.disabled = false;
+                btn.innerText = mode === 'register' ? 'Create account' : 'Log in';
+            }
+        });
+
+        async function enterApp(user, privateKey) {
+            currentUser = user;
+            myPrivateKey = privateKey;
+            $('avatar').innerText = user.username.charAt(0).toUpperCase();
+            $('user-name').innerText = user.username;
+            $('user-fp').innerText = await fingerprint(user.public_key);
+            $('gate').style.display = 'none';
+            $('app-shell').style.display = 'flex';
+        }
+
+        $('logoutBtn').addEventListener('click', async () => {
+            try { await api('logout', {}); } catch (e) {}
+            location.reload(); // drops in-memory keys; local keys stay for next login
+        });
+
+        async function renderLocalAccounts() {
+            let accounts = [];
+            try { accounts = await idbAll(); } catch (e) {}
+            hasLocalAccounts = accounts.length > 0;
+            const list = $('local-accounts-list');
+            list.replaceChildren();
+            for (const a of accounts) {
+                const row = document.createElement('div');
+                row.className = 'acct';
+
+                const pick = document.createElement('button');
+                pick.type = 'button';
+                pick.className = 'pick';
+                pick.innerText = a.username;
+                pick.addEventListener('click', () => {
+                    $('username').value = a.username;
+                    $('password').focus();
+                });
+
+                const forget = document.createElement('button');
+                forget.type = 'button';
+                forget.className = 'forget';
+                forget.innerText = 'Forget';
+                forget.title = "Remove this account's key from this device";
+                forget.addEventListener('click', async () => {
+                    if (!confirm(`Remove ${a.username} from this device? You can restore it by logging in with the password.`)) return;
+                    await idbDelete(a.userId);
+                    await renderLocalAccounts();
+                    setMode(mode);
+                });
+
+                row.append(pick, forget);
+                list.appendChild(row);
+            }
+            setMode(mode);
+        }
+
+        // --- Boot: resume an existing session if this device holds that account's key ---
+        (async function boot() {
+            await renderLocalAccounts();
+            try {
+                const { user } = await api('me');
+                const rec = await idbGet(user.id);
+                if (rec && rec.publicKey === user.public_key) {
+                    return enterApp(user, rec.privateKey);
+                }
+                await api('logout', {}); // session exists but no local key: force a fresh login
+            } catch (e) {
+                // Not signed in, or accounts unavailable: guest mode still works.
+            }
+        })();
     </script>
 </body>
 </html>
