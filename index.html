@@ -123,7 +123,6 @@
         </div>
     </div>
 
-    <script src="config.js"></script>
     <script>
         // --- State ---
         const API = "https://kei.mt/chat/api.php";
@@ -133,7 +132,6 @@
         let lastTime = 0;
         let pollInterval;
         const seen = new Set(); // anti-replay: authenticated (user|ts) tuples already shown
-        const API = (window.CHAT_CONFIG && window.CHAT_CONFIG.apiUrl) || 'api.php';
         
         // --- Crypto Utilities ---
         const enc = new TextEncoder();
