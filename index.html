@@ -273,11 +273,6 @@
                     <div class="side-title">Blocked</div>
                     <div id="blocked-list"></div>
                 </div>
-
-                <div class="side-section">
-                    <div class="side-title">Rooms</div>
-                    <div class="side-empty">Coming soon.</div>
-                </div>
             </div>
         </div>
 
@@ -760,8 +755,7 @@
         const seenDm = new Set();
         const readMarks = new Map(); // peerId -> last read message id
         let lastDmId = 0;
-        let activeId = null;       // activeTarget: { type: 'dm', id } (rooms come later)
-        let syncing = false, syncAgain = false;
+        let activeId = null;       // activeTarget: { type: 'dm', id }        let syncing = false, syncAgain = false;
         let syncTimer = null;
 
         const conv = (id) => { if (!convs.has(id)) convs.set(id, []); return convs.get(id); };
