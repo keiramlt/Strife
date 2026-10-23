@@ -51,6 +51,9 @@
 
         /* --- Start screen (full page, card centred) --- */
         .booting #gate { visibility: hidden; }
+        #offline { position: fixed; inset: 0; z-index: 1000; display: flex; flex-direction: column;
+                   align-items: center; justify-content: center; gap: 0.75rem; padding: 1rem;
+                   text-align: center; background: rgba(0,0,0,0.88); color: #fff; }
         #gate { flex: 1; display: flex; align-items: center; justify-content: center; padding: 1rem; overflow-y: auto; }
         .card {
             background-color: var(--panel-bg); padding: 2.5rem; border-radius: 12px;
@@ -164,6 +167,13 @@
     </script>
 </head>
 <body>
+
+    <!-- Shown when the server can't be reached (nothing works without it) -->
+    <div id="offline" hidden>
+        <h2>Server unreachable</h2>
+        <p>Strife can't reach its server right now, so nothing will work until it's back. Retrying automatically…</p>
+        <button type="button" id="retryBtn">Retry now</button>
+    </div>
 
     <!-- Start screen: guest rooms or account -->
     <div id="gate">
@@ -434,7 +444,7 @@
 
             btn.disabled = true; btn.innerText = 'Joining...';
             try {
-                const saltRes = await fetch(`${API}?room=${encodeURIComponent(room)}&action=salt`);
+                const saltRes = await apiFetch(`${API}?room=${encodeURIComponent(room)}&action=salt`);
                 if (!saltRes.ok) throw new Error('salt fetch failed');
                 const { salt } = await saltRes.json();
                 if (!salt) throw new Error('no salt');
@@ -471,7 +481,7 @@
 
         async function fetchMessages() {
             try {
-                const res = await fetch(`${API}?room=${encodeURIComponent(guestRoom)}&last_time=${lastTime}`);
+                const res = await apiFetch(`${API}?room=${encodeURIComponent(guestRoom)}&last_time=${lastTime}`);
                 const messages = await res.json();
                 if (!Array.isArray(messages)) return;
 
@@ -508,7 +518,7 @@
             const payload = { user: guestUser, iv, ciphertext, ts };
 
             try {
-                const res = await fetch(`${API}?room=${encodeURIComponent(guestRoom)}`, {
+                const res = await apiFetch(`${API}?room=${encodeURIComponent(guestRoom)}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload)
@@ -543,8 +553,36 @@
         let myPrivateKey = null;  // non-extractable ECDH CryptoKey
         let hasLocalAccounts = false;
 
+        const DOWN_STATUS = [502, 503, 504];
+        let pingTimer = null, bootDown = false;
+
+        function markDown() {
+            $('offline').hidden = false;
+            document.documentElement.classList.remove('booting');
+            if (!pingTimer) pingTimer = setInterval(ping, 5000);
+        }
+        async function ping() {
+            try {
+                const res = await fetch(`${API}?action=me`, { credentials: 'include' });
+                if (DOWN_STATUS.includes(res.status)) return;
+            } catch (e) { return; }
+            clearInterval(pingTimer); pingTimer = null;
+            if (bootDown) return location.reload(); // boot never finished, so redo auto-login
+            $('offline').hidden = true;
+        }
+        $('retryBtn').addEventListener('click', ping);
+
+        // Use instead of fetch(): flags the server as unreachable on network failure / 502-504.
+        async function apiFetch(url, opts) {
+            let res;
+            try { res = await fetch(url, opts); }
+            catch (e) { markDown(); throw new Error('Server unreachable'); }
+            if (DOWN_STATUS.includes(res.status)) { markDown(); throw new Error('Server unreachable'); }
+            return res;
+        }
+
         async function api(action, body, qs = '') {
-            const res = await fetch(`${API}?action=${action}${qs}`, {
+            const res = await apiFetch(`${API}?action=${action}${qs}`, {
                 method: body ? 'POST' : 'GET',
                 credentials: 'include',
                 headers: body ? { 'Content-Type': 'application/json' } : {},
@@ -1120,6 +1158,10 @@
                 }
                 await api('logout', {}); // session exists but no local key: force a fresh login
             } catch (e) {
+                if (e.message === 'Server unreachable') {
+                    bootDown = true;
+                    return; // overlay is up; keep the resume hint and reload once the server is back
+                }
                 // Not signed in, or accounts unavailable: guest mode still works.
             }
             // Resume failed: show the start screen.
