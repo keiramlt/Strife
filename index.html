@@ -50,6 +50,7 @@
         button:disabled { opacity: 0.6; cursor: default; }
 
         /* --- Start screen (full page, card centred) --- */
+        .booting #gate { visibility: hidden; }
         #gate { flex: 1; display: flex; align-items: center; justify-content: center; padding: 1rem; overflow-y: auto; }
         .card {
             background-color: var(--panel-bg); padding: 2.5rem; border-radius: 12px;
@@ -157,6 +158,10 @@
             #local-accounts { width: auto; border-left: none; padding-left: 0; border-top: 1px solid #333; padding-top: 1.2rem; }
         }
     </style>
+    <script>
+        // If this device was signed in last time, hide the start screen until the session check finishes.
+        try { if (localStorage.getItem('strife_resume')) document.documentElement.classList.add('booting'); } catch (e) {}
+    </script>
 </head>
 <body>
 
@@ -301,7 +306,8 @@
     <script>
         // --- Config ---
         const API = "https://kei.mt/chat/api.php"; // change if api.php moves
-        const PBKDF2_ITERATIONS = 600000;          // OWASP 2023+ guidance
+        const RESUME_HINT = 'strife_resume';        // set while signed in, so boot can skip the start screen
+        const PBKDF2_ITERATIONS = 600000;         // OWASP 2023+ guidance
         const SYNC_MS = 3000;
 
         const enc = new TextEncoder();
@@ -702,6 +708,7 @@
 
         $('logoutBtn').addEventListener('click', async () => {
             try { await api('logout', {}); } catch (e) {}
+            try { localStorage.removeItem(RESUME_HINT); } catch (e) {}
             location.reload(); // drops in-memory keys; local keys stay for next login
         });
 
@@ -1092,26 +1099,33 @@
             myPrivateKey = privateKey;
             $('avatar').innerText = user.username.charAt(0).toUpperCase();
             $('user-name').innerText = user.username;
-            $('user-fp').innerText = await fingerprint(user.public_key);
+            try { localStorage.setItem(RESUME_HINT, '1'); } catch (e) {}
             $('gate').style.display = 'none';
             $('app-shell').style.display = 'flex';
+            document.documentElement.classList.remove('booting');
+            fingerprint(user.public_key).then((fp) => { $('user-fp').innerText = fp; });
             await sync();
             syncTimer = setInterval(sync, SYNC_MS);
         }
 
         // --- Boot: resume an existing session if this device holds that account's key ---
         (async function boot() {
-            await renderLocalAccounts();
+            const accountsRendered = renderLocalAccounts(); // runs alongside the session check
             try {
                 const { user } = await api('me');
                 const rec = await idbGet(user.id);
                 if (rec && rec.publicKey === user.public_key) {
-                    return enterApp(user, rec.privateKey);
+                    await enterApp(user, rec.privateKey);
+                    return;
                 }
                 await api('logout', {}); // session exists but no local key: force a fresh login
             } catch (e) {
                 // Not signed in, or accounts unavailable: guest mode still works.
             }
+            // Resume failed: show the start screen.
+            try { localStorage.removeItem(RESUME_HINT); } catch (e) {}
+            await accountsRendered;
+            document.documentElement.classList.remove('booting');
         })();
     </script>
 </body>
