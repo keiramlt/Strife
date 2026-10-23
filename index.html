@@ -29,7 +29,28 @@
             display: flex;
             height: 100vh;
             overflow: hidden;
+            -webkit-font-smoothing: antialiased;
         }
+
+        /* Soft drifting glow behind everything */
+        body::before {
+            content: ''; position: fixed; inset: -20%; z-index: -1; pointer-events: none;
+            background:
+                radial-gradient(40% 40% at 20% 25%, rgba(187,134,252,0.13), transparent 70%),
+                radial-gradient(35% 35% at 80% 75%, rgba(56,142,60,0.10), transparent 70%),
+                radial-gradient(30% 30% at 75% 20%, rgba(187,134,252,0.07), transparent 70%);
+            animation: drift 22s ease-in-out infinite alternate;
+        }
+        @keyframes drift {
+            from { transform: translate3d(-2%, -1%, 0) scale(1); }
+            to   { transform: translate3d(3%, 2%, 0) scale(1.08); }
+        }
+        @keyframes fadeUp   { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+        @keyframes fadeIn   { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes paneIn   { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+        @keyframes popIn    { from { opacity: 0; transform: translateY(8px) scale(0.96); } to { opacity: 1; transform: none; } }
+        @keyframes badgePop { 0% { transform: scale(0.4); } 70% { transform: scale(1.15); } 100% { transform: scale(1); } }
+        @keyframes spin     { to { transform: rotate(360deg); } }
 
         h1 { text-align: center; margin-bottom: 1.5rem; color: var(--accent); }
 
@@ -38,28 +59,69 @@
         .input-group input {
             width: 100%; padding: 0.8rem; border-radius: 6px; border: 1px solid #333;
             background-color: #2a2a2a; color: white; font-size: 1rem; outline: none;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
         }
-        .input-group input:focus { border-color: var(--accent); }
+        .input-group input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(187,134,252,0.18); background-color: #2e2e2e; }
 
         button {
             width: 100%; padding: 0.9rem; border: none; border-radius: 6px;
             background-color: var(--accent); color: white; font-size: 1rem; font-weight: bold;
-            cursor: pointer; transition: background 0.2s;
+            cursor: pointer;
+            transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease,
+                        transform 0.15s ease, box-shadow 0.2s ease, opacity 0.2s ease;
         }
         button:hover { background-color: var(--accent-hover); }
+        button:active:not(:disabled) { transform: scale(0.97); }
+        button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
         button:disabled { opacity: 0.6; cursor: default; }
 
         /* --- Start screen (full page, card centred) --- */
         .booting #gate { visibility: hidden; }
-        #offline { position: fixed; inset: 0; z-index: 1000; display: flex; flex-direction: column;
-                   align-items: center; justify-content: center; gap: 0.75rem; padding: 1rem;
-                   text-align: center; background: rgba(0,0,0,0.88); color: #fff; }
-        #gate { flex: 1; display: flex; align-items: center; justify-content: center; padding: 1rem; overflow-y: auto; }
+        #offline { position: fixed; inset: 0; z-index: 1000; display: flex; align-items: center; justify-content: center;
+                   padding: 1rem; background: rgba(10,10,14,0.72); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+                   animation: fadeIn 0.3s ease both; }
+        #offline.leaving { animation: fadeIn 0.25s ease reverse both; pointer-events: none; }
+        .offline-card {
+            display: flex; flex-direction: column; align-items: center; gap: 0.6rem; text-align: center;
+            width: 100%; max-width: 380px; padding: 2.2rem 2rem 1.8rem; border-radius: 16px;
+            background: linear-gradient(180deg, #232228, #1b1b1f); border: 1px solid rgba(255,255,255,0.07);
+            box-shadow: 0 20px 60px rgba(0,0,0,0.6), 0 0 0 1px rgba(207,102,121,0.08);
+            animation: fadeUp 0.45s cubic-bezier(.2,.8,.2,1) both;
+        }
+        .offline-icon { position: relative; width: 84px; height: 84px; margin-bottom: 0.6rem; display: flex; align-items: center; justify-content: center; }
+        .offline-icon::before, .offline-icon::after {
+            content: ''; position: absolute; inset: 0; border-radius: 50%; border: 2px solid var(--danger);
+            opacity: 0; animation: ripple 2.4s ease-out infinite;
+        }
+        .offline-icon::after { animation-delay: 1.2s; }
+        @keyframes ripple { 0% { transform: scale(0.55); opacity: 0.55; } 100% { transform: scale(1.25); opacity: 0; } }
+        .offline-icon .disc {
+            position: relative; width: 56px; height: 56px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+            background: rgba(207,102,121,0.14); color: var(--danger);
+        }
+        .offline-icon svg { width: 28px; height: 28px; }
+        .offline-card h2 { font-size: 1.3rem; }
+        .offline-card p { color: var(--text-muted); font-size: 0.92rem; line-height: 1.5; }
+        #retryBtn {
+            width: auto; margin-top: 0.7rem; padding: 0.5rem 1.3rem; font-size: 0.88rem; border-radius: 999px;
+            display: inline-flex; align-items: center; gap: 0.5rem;
+        }
+        #retryBtn .spinner {
+            display: none; width: 12px; height: 12px; border-radius: 50%;
+            border: 2px solid rgba(255,255,255,0.4); border-top-color: #fff; animation: spin 0.7s linear infinite;
+        }
+        #retryBtn.busy .spinner { display: inline-block; }
+        #offline-status { font-size: 0.78rem; color: var(--text-muted); opacity: 0.8; min-height: 1.1em; }
+        #gate { flex: 1; display: flex; align-items: center; justify-content: center; padding: 1rem; overflow-y: auto; animation: fadeIn 0.4s ease both; }
         .card {
             background-color: var(--panel-bg); padding: 2.5rem; border-radius: 12px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.5); width: 100%; max-width: 420px;
-            display: flex; gap: 2rem; transition: max-width 0.2s ease;
+            display: flex; gap: 2rem; transition: max-width 0.35s cubic-bezier(.2,.8,.2,1);
+            animation: fadeUp 0.5s cubic-bezier(.2,.8,.2,1) both;
         }
+        #guest-form, #account-area, #confirm-group, #register-notice, #local-accounts { animation: paneIn 0.3s ease both; }
+        .error:not(:empty) { animation: shake 0.35s ease; }
+        @keyframes shake { 20%, 60% { transform: translateX(-4px); } 40%, 80% { transform: translateX(4px); } }
         .card.with-side { max-width: 720px; }
         .card-main { flex: 1; min-width: 0; }
         .tabs { display: flex; gap: 0.5rem; margin-bottom: 1.5rem; }
@@ -73,7 +135,7 @@
         #local-accounts .label { font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.6rem; }
         .acct { display: flex; gap: 0.4rem; margin-bottom: 0.4rem; }
         .acct .pick { background: #2a2a2a; text-align: left; font-weight: normal; padding: 0.6rem 0.8rem; }
-        .acct .pick:hover { background: #333; }
+        .acct .pick:hover { background: #333; transform: translateX(2px); }
         .acct .forget { width: auto; background: transparent; border: 1px solid #333; color: var(--danger); padding: 0.6rem 0.8rem; }
 
         /* --- Shared chat pieces --- */
@@ -82,9 +144,11 @@
             justify-content: space-between; align-items: center; gap: 0.8rem; border-bottom: 1px solid #333;
         }
         .chat-header h2 { font-size: 1.2rem; margin: 0; color: var(--accent); }
-        .chat-messages { flex: 1; padding: 1.5rem; overflow-y: auto; display: flex; flex-direction: column; gap: 0.8rem; }
+        .chat-messages { flex: 1; padding: 1.5rem; overflow-y: auto; display: flex; flex-direction: column; gap: 0.8rem; scroll-behavior: smooth; }
+        .chat-messages.swap { animation: paneIn 0.28s ease both; }
         .chat-messages.empty { align-items: center; justify-content: center; color: var(--text-muted); text-align: center; }
         .message { max-width: min(75%, 700px); padding: 0.7rem 1.1rem; border-radius: 15px; line-height: 1.4; word-wrap: break-word; overflow-wrap: anywhere; }
+        .message.pop { animation: popIn 0.28s cubic-bezier(.2,.8,.2,1) both; }
         .msg-self { background-color: var(--msg-self); align-self: flex-end; border-bottom-right-radius: 2px; }
         .msg-other { background-color: var(--msg-other); align-self: flex-start; border-bottom-left-radius: 2px; }
         .msg-error { background-color: transparent; border: 1px solid var(--danger); color: var(--danger); }
@@ -94,10 +158,15 @@
         .input-area input {
             flex: 1; padding: 0.8rem 1.1rem; border-radius: 20px; border: 1px solid #333;
             background-color: #2a2a2a; color: white; outline: none; font-size: 1rem;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
         }
+        .input-area input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(187,134,252,0.15); }
         .input-area button { width: auto; padding: 0.8rem 1.5rem; border-radius: 20px; }
         .outline-btn { width: auto; padding: 0.5rem 1rem; font-size: 0.85rem; background: transparent; border: 1px solid var(--danger); color: var(--danger); }
         .outline-btn:hover { background: rgba(207,102,121,0.15); }
+
+        /* --- Screen entrances --- */
+        #guest-screen, #app-shell { animation: fadeIn 0.4s ease both; }
 
         /* --- Guest chat (full page) --- */
         #guest-screen { display: none; flex: 1; min-width: 0; flex-direction: column; background-color: var(--panel-bg); }
@@ -113,6 +182,7 @@
         #user-meta { flex: 1; min-width: 0; }
         #user-name { font-weight: bold; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         #user-fp { font-size: 0.65rem; color: var(--text-muted); font-family: monospace; }
+        #logoutBtn:hover { background: rgba(207,102,121,0.15); }
         #logoutBtn { width: auto; padding: 0.4rem 0.8rem; font-size: 0.8rem; background: transparent; border: 1px solid var(--danger); color: var(--danger); }
         #sidebar-body { flex: 1; padding: 0.5rem 0; overflow-y: auto; }
 
@@ -120,11 +190,13 @@
         .side-title { font-size: 0.7rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 0.5rem; }
         .side-empty { font-size: 0.8rem; color: var(--text-muted); line-height: 1.4; }
         .side-msg { font-size: 0.8rem; margin-top: 0.4rem; min-height: 1em; }
+        .side-msg:not(:empty) { animation: paneIn 0.25s ease both; }
         .side-msg.ok { color: var(--ok); }
         .side-msg.err { color: var(--danger); }
         .add-row { display: flex; gap: 0.4rem; }
         .add-row input { flex: 1; min-width: 0; padding: 0.55rem 0.7rem; border-radius: 6px; border: 1px solid #333; background: #2a2a2a; color: white; outline: none; }
-        .add-row input:focus { border-color: var(--accent); }
+        .add-row input { transition: border-color 0.2s ease, box-shadow 0.2s ease; }
+        .add-row input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(187,134,252,0.15); }
         .mini-btn { width: auto; padding: 0.45rem 0.8rem; font-size: 0.8rem; }
         .mini-btn.ghost { background: transparent; border: 1px solid #444; color: var(--text-muted); }
         .mini-btn.ghost:hover { background: #2a2a2a; }
@@ -133,13 +205,17 @@
         .friend {
             display: flex; align-items: center; gap: 0.6rem; padding: 0.55rem 0.7rem; border-radius: 8px;
             cursor: pointer; margin-bottom: 2px;
+            transition: background-color 0.2s ease, transform 0.2s ease;
         }
-        .friend:hover { background: #262626; }
+        .friend:hover { background: #262626; transform: translateX(3px); }
         .friend.active { background: #2f2540; }
         .friend .mini-avatar {
+            transition: background-color 0.2s ease, transform 0.2s ease;
             width: 28px; height: 28px; border-radius: 50%; background: #3a3a3a; flex-shrink: 0;
             display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: bold;
         }
+        .friend:hover .mini-avatar { background: #4a4a4a; transform: scale(1.08); }
+        .friend.active .mini-avatar { background: var(--accent); color: #111; }
         .friend .name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         .badge { background: var(--accent); color: #111; border-radius: 10px; font-size: 0.7rem; font-weight: bold; padding: 0.1rem 0.5rem; }
 
@@ -148,6 +224,10 @@
         #chat-sub { font-size: 0.7rem; color: var(--text-muted); font-family: monospace; }
         #chat-actions { display: flex; gap: 0.5rem; flex-shrink: 0; }
         #backBtn { display: none; width: auto; padding: 0.4rem 0.8rem; background: transparent; border: 1px solid #444; }
+
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; }
+        }
 
         @media (max-width: 700px) {
             #sidebar { width: 100%; border-right: none; }
@@ -169,10 +249,22 @@
 <body>
 
     <!-- Shown when the server can't be reached (nothing works without it) -->
-    <div id="offline" hidden>
-        <h2>Server unreachable</h2>
-        <p>Strife can't reach its server right now, so nothing will work until it's back. Retrying automatically…</p>
-        <button type="button" id="retryBtn">Retry now</button>
+    <div id="offline" hidden role="alert">
+        <div class="offline-card">
+            <div class="offline-icon">
+                <div class="disc">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M2 8.8a15 15 0 0 1 4-2.5M22 8.8a15 15 0 0 0-9.3-4.7M5 12.9a10 10 0 0 1 3.2-2M19 12.9a10 10 0 0 0-3-2.1M8.5 16.4a5 5 0 0 1 7 0"/>
+                        <circle cx="12" cy="20" r="0.8" fill="currentColor"/>
+                        <path d="M3 3l18 18"/>
+                    </svg>
+                </div>
+            </div>
+            <h2>Server unreachable</h2>
+            <p>Strife can't reach its server right now, so nothing will work until it's back.</p>
+            <button type="button" id="retryBtn"><span class="spinner"></span><span id="retryLabel">Retry now</span></button>
+            <div id="offline-status" aria-live="polite"></div>
+        </div>
     </div>
 
     <!-- Start screen: guest rooms or account -->
@@ -337,6 +429,11 @@
             for (let i = 0; i < u8.length; i++) s += String.fromCharCode(u8[i]);
             return btoa(s);
         }
+
+        function scrollDown(box, smooth = true) {
+            box.scrollTo({ top: box.scrollHeight, behavior: smooth ? 'smooth' : 'auto' });
+        }
+        function popIn(el) { el.classList.add('pop'); return el; }
 
         // Message bubble (innerText only — no HTML injection)
         function bubble(user, text, className, ts) {
@@ -531,8 +628,8 @@
 
         function appendMessage(user, text, className) {
             const box = $('guest-messages');
-            box.appendChild(bubble(user, text, className));
-            box.scrollTop = box.scrollHeight;
+            box.appendChild(popIn(bubble(user, text, className)));
+            scrollDown(box);
         }
 
         function appendSystemMessage(text, isError = false) {
@@ -542,8 +639,9 @@
             el.style.fontSize = '0.85rem';
             el.style.color = isError ? 'var(--danger)' : '#888';
             el.innerText = text;
+            el.className = 'pop';
             box.appendChild(el);
-            box.scrollTop = box.scrollHeight;
+            scrollDown(box);
         }
 
         // =====================================================================
@@ -554,21 +652,51 @@
         let hasLocalAccounts = false;
 
         const DOWN_STATUS = [502, 503, 504];
-        let pingTimer = null, bootDown = false;
+        const PING_MS = 5000;
+        let pingTimer = null, bootDown = false, nextPing = 0, pinging = false;
 
+        function setOfflineUi(busy, text) {
+            $('retryBtn').disabled = busy;
+            $('retryBtn').classList.toggle('busy', busy);
+            $('retryLabel').innerText = busy ? 'Checking…' : 'Retry now';
+            $('offline-status').innerText = text;
+        }
+        function tick() {
+            if (pinging) return;
+            const left = Math.ceil((nextPing - Date.now()) / 1000);
+            if (left <= 0) return ping();
+            setOfflineUi(false, `Retrying automatically in ${left}s`);
+        }
         function markDown() {
-            $('offline').hidden = false;
+            const el = $('offline');
+            el.classList.remove('leaving');
+            el.hidden = false;
             document.documentElement.classList.remove('booting');
-            if (!pingTimer) pingTimer = setInterval(ping, 5000);
+            if (!pingTimer) {
+                nextPing = Date.now() + PING_MS;
+                pingTimer = setInterval(tick, 1000);
+                tick();
+            }
         }
         async function ping() {
+            if (pinging) return;
+            pinging = true;
+            setOfflineUi(true, 'Contacting server…');
+            let up = false;
             try {
                 const res = await fetch(`${API}?action=me`, { credentials: 'include' });
-                if (DOWN_STATUS.includes(res.status)) return;
-            } catch (e) { return; }
+                up = !DOWN_STATUS.includes(res.status);
+            } catch (e) {}
+            pinging = false;
+            if (!up) {
+                nextPing = Date.now() + PING_MS;
+                return tick();
+            }
             clearInterval(pingTimer); pingTimer = null;
             if (bootDown) return location.reload(); // boot never finished, so redo auto-login
-            $('offline').hidden = true;
+            const el = $('offline');
+            el.classList.add('leaving');
+            setTimeout(() => { if (!pingTimer) { el.hidden = true; el.classList.remove('leaving'); } }, 250);
         }
         $('retryBtn').addEventListener('click', ping);
 
@@ -893,8 +1021,8 @@
                         const msg = await ingest(m);
                         if (msg && msg.peerId === activeId) {
                             const box = $('app-messages');
-                            box.appendChild(dmBubble(msg));
-                            box.scrollTop = box.scrollHeight;
+                            box.appendChild(popIn(dmBubble(msg)));
+                            scrollDown(box);
                             if (document.visibilityState === 'visible') markRead(activeId);
                         }
                     }
@@ -1053,7 +1181,8 @@
             box.classList.remove('empty');
             box.replaceChildren();
             for (const m of conv(id)) box.appendChild(dmBubble(m));
-            box.scrollTop = box.scrollHeight;
+            scrollDown(box, false);
+            box.classList.remove('swap'); void box.offsetWidth; box.classList.add('swap');
 
             markRead(id);
             renderSidebar();
@@ -1069,6 +1198,7 @@
             $('app-shell').classList.remove('chat-open');
             const box = $('app-messages');
             box.classList.add('empty');
+            box.classList.remove('swap'); void box.offsetWidth; box.classList.add('swap');
             box.replaceChildren();
             box.innerText = 'Pick a friend on the left to start an encrypted conversation.';
             renderSidebar();
@@ -1105,8 +1235,9 @@
                 el.style.fontSize = '0.85rem';
                 el.style.color = 'var(--danger)';
                 el.innerText = e.message || 'Failed to send.';
+                el.className = 'pop';
                 box.appendChild(el);
-                box.scrollTop = box.scrollHeight;
+                scrollDown(box);
             }
         }
 
