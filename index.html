@@ -1,1305 +1,920 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Strife</title>
-    <style>
-        :root {
-            --bg-color: #121212;
-            --panel-bg: #1e1e1e;
-            --side-bg: #1a1a1a;
-            --text-main: #ffffff;
-            --text-muted: #a0a0a0;
-            --accent: #bb86fc;
-            --accent-hover: #9c68d9;
-            --msg-self: #388e3c;
-            --msg-other: #333333;
-            --danger: #cf6679;
-            --warn: #f0a020;
-            --ok: #81c784;
-        }
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>PetaBox</title>
+<!-- github pages can't send headers, so the content security policy goes here. if you change the api address, change it here too -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' https://challenges.cloudflare.com; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://kei.mt http://localhost:3000; frame-src https://challenges.cloudflare.com; worker-src 'self'; object-src 'none'; base-uri 'none'">
+<link rel="preconnect" href="https://kei.mt" crossorigin>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: 15px; background: #111; color: #d0d0d0; min-height: 100vh; padding: 24px 20px 48px; }
+a { color: #bbb; } a:hover { color: #fff; }
+.wrap { width: 100%; max-width: 560px; margin: 0 auto; } .wrap.wide { max-width: 900px; }
+nav { display: flex; align-items: center; gap: 16px; margin-bottom: 40px; font-size: .85rem; }
+nav .brand { font-weight: 700; color: #fff; text-decoration: none; font-size: 1rem; margin-right: auto; }
+nav a, nav button.link { color: #888; text-decoration: none; background: none; border: 0; padding: 0; font: inherit; cursor: pointer; }
+nav a:hover, nav button.link:hover { color: #fff; background: none; }
+h1 { font-size: 1.15rem; font-weight: 600; margin-bottom: 4px; color: #fff; }
+h2 { font-size: .95rem; font-weight: 600; color: #fff; margin: 24px 0 8px; }
+.sub { color: #666; font-size: .82rem; margin-bottom: 28px; line-height: 1.5; }
+p { line-height: 1.5; margin-bottom: 10px; }
+.small { font-size: .78rem; color: #666; } .foot { margin-top: 40px; }
+.drop { border: 1.5px dashed #2e2e2e; border-radius: 8px; padding: 32px 20px; text-align: center; color: #666; font-size: .85rem; cursor: pointer; position: relative; }
+.drop:hover, .drop.over { border-color: #555; color: #999; }
+.drop input { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+.drop .picked { margin-top: 8px; font-size: .78rem; color: #999; min-height: 1em; word-break: break-all; }
+label.field { display: block; margin-top: 16px; font-size: .78rem; color: #777; }
+select, input[type=text], input[type=password] { display: block; width: 100%; margin-top: 6px; padding: 9px 10px; border-radius: 6px; border: 1.5px solid #2e2e2e; background: #161616; color: #ddd; font: inherit; font-size: .85rem; }
+select:focus, input:focus { outline: none; border-color: #666; }
+.check { display: flex; gap: 8px; align-items: center; margin-top: 14px; font-size: .8rem; color: #999; }
+.actions { display: flex; gap: 8px; margin-top: 18px; flex-wrap: wrap; }
+button { padding: 9px 18px; border-radius: 6px; border: 1.5px solid #2e2e2e; background: #1a1a1a; color: #aaa; cursor: pointer; font-size: .82rem; font-family: inherit; }
+button:hover:not(:disabled) { background: #222; border-color: #444; color: #ddd; }
+button.primary { background: #e0e0e0; color: #111; border-color: #e0e0e0; }
+button.primary:hover:not(:disabled) { background: #fff; border-color: #fff; color: #111; }
+button.danger:hover:not(:disabled) { border-color: #7a2a2a; color: #e08a8a; }
+button.sm { padding: 4px 10px; font-size: .74rem; }
+button:disabled { opacity: .35; cursor: not-allowed; }
+.progress { display: none; margin-top: 20px; }
+.track { height: 3px; background: #222; border-radius: 2px; overflow: hidden; margin-bottom: 8px; }
+.fill { height: 100%; width: 0; background: #e0e0e0; }
+.stats { display: flex; gap: 16px; font-size: .75rem; color: #555; flex-wrap: wrap; } .stats b { color: #999; font-weight: 500; }
+.msg { padding: 10px 14px; border-radius: 6px; font-size: .82rem; margin-top: 16px; line-height: 1.5; }
+.msg.err { background: #1f0e0e; border: 1px solid #3a1a1a; color: #bf6a6a; }
+.msg.ok { background: #0e1f0e; border: 1px solid #1a3a1a; color: #6abf6a; }
+.msg.info { background: #161616; border: 1px solid #2a2a2a; color: #999; }
+.msg.warn { background: #1f1a0e; border: 1px solid #3a3017; color: #bfa56a; }
+.result { margin-top: 20px; } .result-item { margin-top: 14px; }
+.result-name { font-size: .82rem; color: #888; margin-bottom: 6px; word-break: break-all; }
+.result-link { display: flex; align-items: center; gap: 8px; background: #161616; border: 1.5px solid #2a2a2a; border-radius: 6px; padding: 10px 12px; }
+.result-link code { flex: 1; font-size: .72rem; word-break: break-all; color: #888; }
+.card { border: 1.5px solid #222; border-radius: 8px; padding: 20px; margin-bottom: 20px; background: #161616; }
+.card .name { font-weight: 600; margin-bottom: 4px; word-break: break-all; color: #fff; } .card .meta { font-size: .78rem; color: #666; }
+.tabs { display: flex; gap: 4px; margin-bottom: 24px; border-bottom: 1px solid #222; }
+.tabs button { border: 0; border-bottom: 2px solid transparent; border-radius: 0; background: none; padding: 8px 14px; }
+.tabs button.active { color: #fff; border-bottom-color: #e0e0e0; }
+.recovery { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 1rem; background: #161616; border: 1.5px solid #3a3017; border-radius: 6px; padding: 16px; word-break: break-word; color: #e8d9a8; line-height: 1.7; user-select: all; }
+table { width: 100%; border-collapse: collapse; font-size: .82rem; }
+th { text-align: left; font-weight: 500; color: #666; font-size: .72rem; padding: 6px 8px; border-bottom: 1px solid #222; }
+td { padding: 10px 8px; border-bottom: 1px solid #1c1c1c; vertical-align: middle; }
+td.name { word-break: break-all; color: #ddd; max-width: 260px; } td.acts { white-space: nowrap; text-align: right; } td.acts button { margin-left: 4px; }
+td select { margin: 0; padding: 4px 6px; font-size: .75rem; width: auto; display: inline-block; }
+.badge { font-size: .68rem; padding: 2px 7px; border-radius: 10px; border: 1px solid #333; color: #888; white-space: nowrap; }
+.badge.on { border-color: #2a4a2a; color: #6abf6a; }
+.hidden { display: none !important; }
+.modal-back { position: fixed; inset: 0; z-index: 100; display: flex; align-items: center; justify-content: center; padding: 20px; background: rgba(0, 0, 0, .65); }
+.modal { width: 100%; max-width: 380px; border: 1.5px solid #2e2e2e; border-radius: 8px; padding: 22px; background: #161616; box-shadow: 0 12px 40px rgba(0, 0, 0, .6); }
+.modal h2 { margin: 0 0 8px; } .modal p { color: #999; font-size: .85rem; word-break: break-word; margin-bottom: 0; }
+.modal .actions { justify-content: flex-end; margin-top: 20px; }
+.modal-back { animation: modal-fade .16s ease-out; } .modal { animation: modal-zoom-in .18s cubic-bezier(.2, .8, .3, 1); }
+.modal-back.out { animation: modal-fade .12s ease-in reverse forwards; pointer-events: none; } .modal-back.out .modal { animation: modal-zoom-out .12s ease-in forwards; }
+@keyframes modal-fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes modal-zoom-in { from { transform: scale(.88); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+@keyframes modal-zoom-out { from { transform: scale(1); opacity: 1; } to { transform: scale(.9); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .modal-back, .modal, .modal-back.out, .modal-back.out .modal { animation: none; } }
+.dash-head { text-align: center; margin-bottom: 8px; } .dash-head .sub { margin-bottom: 16px; }
+.view-toggle { display: inline-flex; border: 1.5px solid #2e2e2e; border-radius: 6px; overflow: hidden; margin-bottom: 24px; }
+.view-toggle button { border: 0; border-radius: 0; background: none; padding: 6px 16px; }
+.view-toggle button.active { background: #222; color: #fff; }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 16px; justify-content: center; }
+.fcard { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 8px; border: 1.5px solid #222; border-radius: 8px; padding: 20px 16px; background: #161616; }
+.fcard .name { font-weight: 600; color: #fff; word-break: break-all; }
+.fcard .meta { font-size: .78rem; color: #666; }
+.fcard select { margin: 0; width: auto; padding: 4px 6px; font-size: .75rem; }
+.fcard .acts { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; margin-top: 4px; }
+.settings-sec { border: 1.5px solid #222; border-radius: 8px; padding: 20px; margin-bottom: 20px; background: #161616; }
+.settings-sec h2 { margin-top: 0; }
+.settings-sec.danger { border-color: #3a1a1a; }
+button.danger-solid { background: #7a2a2a; border-color: #7a2a2a; color: #fff; }
+button.danger-solid:hover:not(:disabled) { background: #983535; border-color: #983535; color: #fff; }
+@media (max-width: 640px) { th:nth-child(3), td:nth-child(3) { display: none; } }
 
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        [hidden] { display: none !important; }
+/* --- animations (pure css, nothing here touches the js). all of it is switched off for prefers-reduced-motion at the bottom --- */
+@keyframes fade-up { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+@keyframes fade-down { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: none; } }
+@keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes pop-in { 0% { opacity: 0; transform: scale(.92); } 60% { opacity: 1; transform: scale(1.025); } 100% { opacity: 1; transform: scale(1); } }
+@keyframes shimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+@keyframes pulse-border { 0%, 100% { box-shadow: 0 0 0 0 rgba(224, 224, 224, 0); } 50% { box-shadow: 0 0 0 4px rgba(224, 224, 224, .08); } }
+@keyframes shake { 10%, 90% { transform: translateX(-1px); } 20%, 80% { transform: translateX(2px); } 30%, 50%, 70% { transform: translateX(-4px); } 40%, 60% { transform: translateX(4px); } }
+@keyframes glow-warn { 0%, 100% { box-shadow: 0 0 0 0 rgba(232, 217, 168, 0); border-color: #3a3017; } 50% { box-shadow: 0 0 18px 0 rgba(232, 217, 168, .12); border-color: #6b5a28; } }
+@keyframes bg-drift { 0% { background-position: 0% 0%, 100% 100%; } 100% { background-position: 100% 100%, 0% 0%; } }
 
-        body {
-            background-color: var(--bg-color);
-            color: var(--text-main);
-            display: flex;
-            height: 100vh;
-            overflow: hidden;
-            -webkit-font-smoothing: antialiased;
-        }
+/* page + sections */
+body { background-image: radial-gradient(60vmax 60vmax at 15% -10%, rgba(255, 255, 255, .035), transparent 60%), radial-gradient(50vmax 50vmax at 100% 110%, rgba(255, 255, 255, .03), transparent 60%); background-repeat: no-repeat; background-attachment: fixed; background-size: 140% 140%; animation: bg-drift 24s ease-in-out infinite alternate; }
+nav { animation: fade-down .45s cubic-bezier(.2, .8, .3, 1) both; }
+section:not(.hidden) > *, #recovery:not(.hidden) > *, form:not(.hidden) > * { animation: fade-up .2s ease-out both; }
+section:not(.hidden) > :nth-child(1), form:not(.hidden) > :nth-child(1) { animation-delay: 0s; }
+section:not(.hidden) > :nth-child(2), form:not(.hidden) > :nth-child(2) { animation-delay: 0s; }
+section:not(.hidden) > :nth-child(3), form:not(.hidden) > :nth-child(3) { animation-delay: 0s; }
+section:not(.hidden) > :nth-child(4), form:not(.hidden) > :nth-child(4) { animation-delay: 0s; }
+section:not(.hidden) > :nth-child(5), form:not(.hidden) > :nth-child(5) { animation-delay: 0s; }
+section:not(.hidden) > :nth-child(n+6), form:not(.hidden) > :nth-child(n+6) { animation-delay: 0s; }
+#recovery:not(.hidden) > :nth-child(2) { animation-delay: .03s; } #recovery:not(.hidden) > :nth-child(3) { animation-delay: .03s; } #recovery:not(.hidden) > :nth-child(n+4) { animation-delay: .03s; }
+.hidden { animation: none !important; }
 
-        /* Soft drifting glow behind everything */
-        body::before {
-            content: ''; position: fixed; inset: -20%; z-index: -1; pointer-events: none;
-            background:
-                radial-gradient(40% 40% at 20% 25%, rgba(187,134,252,0.13), transparent 70%),
-                radial-gradient(35% 35% at 80% 75%, rgba(56,142,60,0.10), transparent 70%),
-                radial-gradient(30% 30% at 75% 20%, rgba(187,134,252,0.07), transparent 70%);
-            animation: drift 22s ease-in-out infinite alternate;
-        }
-        @keyframes drift {
-            from { transform: translate3d(-2%, -1%, 0) scale(1); }
-            to   { transform: translate3d(3%, 2%, 0) scale(1.08); }
-        }
-        @keyframes fadeUp   { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
-        @keyframes fadeIn   { from { opacity: 0; } to { opacity: 1; } }
-        @keyframes paneIn   { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
-        @keyframes popIn    { from { opacity: 0; transform: translateY(8px) scale(0.96); } to { opacity: 1; transform: none; } }
-        @keyframes badgePop { 0% { transform: scale(0.4); } 70% { transform: scale(1.15); } 100% { transform: scale(1); } }
-        @keyframes spin     { to { transform: rotate(360deg); } }
+/* nav */
+nav .brand { transition: letter-spacing .25s ease, text-shadow .25s ease; }
+nav .brand:hover { letter-spacing: .04em; text-shadow: 0 0 14px rgba(255, 255, 255, .35); }
+nav a:not(.brand), nav button.link { position: relative; transition: color .2s ease; }
+nav a:not(.brand)::after, nav button.link::after { content: ''; position: absolute; left: 0; right: 0; bottom: -3px; height: 1px; background: currentColor; transform: scaleX(0); transform-origin: left; transition: transform .25s cubic-bezier(.2, .8, .3, 1); }
+nav a:not(.brand):hover::after, nav button.link:hover::after { transform: scaleX(1); }
+a { transition: color .2s ease; }
 
-        h1 { text-align: center; margin-bottom: 1.5rem; color: var(--accent); }
+/* buttons */
+button { transition: background-color .2s ease, border-color .2s ease, color .2s ease, transform .15s ease, box-shadow .2s ease, opacity .2s ease; }
+button:hover:not(:disabled) { transform: translateY(-1px); }
+button:active:not(:disabled) { transform: translateY(0) scale(.96); transition-duration: .06s; }
+button.primary:hover:not(:disabled) { box-shadow: 0 6px 18px rgba(255, 255, 255, .14); }
+button.danger-solid:hover:not(:disabled) { box-shadow: 0 6px 18px rgba(152, 53, 53, .35); }
+button.primary:not(:disabled) { position: relative; overflow: hidden; }
+button.primary:not(:disabled)::after { content: ''; position: absolute; top: 0; left: -75%; width: 50%; height: 100%; background: linear-gradient(100deg, transparent, rgba(255, 255, 255, .55), transparent); transform: skewX(-20deg); transition: left .55s ease; pointer-events: none; }
+button.primary:hover:not(:disabled)::after { left: 130%; }
+.tabs button, .view-toggle button { transform: none !important; }
+.tabs button { position: relative; transition: color .2s ease, border-color .25s ease, background-color .2s ease; }
+.tabs button:hover:not(.active) { color: #ddd; border-bottom-color: #444; }
+.view-toggle button { transition: background-color .25s ease, color .25s ease; }
 
-        .input-group { margin-bottom: 1.2rem; }
-        .input-group label { display: block; margin-bottom: 0.4rem; font-size: 0.9rem; color: var(--text-muted); }
-        .input-group input {
-            width: 100%; padding: 0.8rem; border-radius: 6px; border: 1px solid #333;
-            background-color: #2a2a2a; color: white; font-size: 1rem; outline: none;
-            transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
-        }
-        .input-group input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(187,134,252,0.18); background-color: #2e2e2e; }
+/* inputs */
+select, input[type=text], input[type=password] { transition: border-color .2s ease, box-shadow .25s ease, background-color .2s ease; }
+select:hover, input:hover { border-color: #3d3d3d; }
+select:focus, input:focus { background: #1a1a1a; box-shadow: 0 0 0 3px rgba(255, 255, 255, .07); }
+label.field { transition: color .2s ease; } label.field:focus-within { color: #bbb; }
+input[type=checkbox] { transition: transform .15s ease; accent-color: #e0e0e0; cursor: pointer; } input[type=checkbox]:active { transform: scale(.8); }
+.check { transition: color .2s ease; } .check:hover { color: #ccc; }
 
-        button {
-            width: 100%; padding: 0.9rem; border: none; border-radius: 6px;
-            background-color: var(--accent); color: white; font-size: 1rem; font-weight: bold;
-            cursor: pointer;
-            transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease,
-                        transform 0.15s ease, box-shadow 0.2s ease, opacity 0.2s ease;
-        }
-        button:hover { background-color: var(--accent-hover); }
-        button:active:not(:disabled) { transform: scale(0.97); }
-        button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-        button:disabled { opacity: 0.6; cursor: default; }
+/* drop zone */
+.drop { transition: border-color .25s ease, color .25s ease, background-color .25s ease, transform .25s cubic-bezier(.2, .8, .3, 1); }
+.drop:hover { background-color: #141414; }
+.drop.over { background-color: #181818; transform: scale(1.015); animation: pulse-border 1.2s ease-in-out infinite; }
+.drop .picked:not(:empty) { animation: fade-up .3s ease both; }
 
-        /* --- Start screen (full page, card centred) --- */
-        .booting #gate { visibility: hidden; }
-        #offline { position: fixed; inset: 0; z-index: 1000; display: flex; align-items: center; justify-content: center;
-                   padding: 1rem; background: rgba(10,10,14,0.72); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
-                   animation: fadeIn 0.3s ease both; }
-        #offline.leaving { animation: fadeIn 0.25s ease reverse both; pointer-events: none; }
-        .offline-card {
-            display: flex; flex-direction: column; align-items: center; gap: 0.6rem; text-align: center;
-            width: 100%; max-width: 380px; padding: 2.2rem 2rem 1.8rem; border-radius: 16px;
-            background: linear-gradient(180deg, #232228, #1b1b1f); border: 1px solid rgba(255,255,255,0.07);
-            box-shadow: 0 20px 60px rgba(0,0,0,0.6), 0 0 0 1px rgba(207,102,121,0.08);
-            animation: fadeUp 0.45s cubic-bezier(.2,.8,.2,1) both;
-        }
-        .offline-icon { position: relative; width: 84px; height: 84px; margin-bottom: 0.6rem; display: flex; align-items: center; justify-content: center; }
-        .offline-icon::before, .offline-icon::after {
-            content: ''; position: absolute; inset: 0; border-radius: 50%; border: 2px solid var(--danger);
-            opacity: 0; animation: ripple 2.4s ease-out infinite;
-        }
-        .offline-icon::after { animation-delay: 1.2s; }
-        @keyframes ripple { 0% { transform: scale(0.55); opacity: 0.55; } 100% { transform: scale(1.25); opacity: 0; } }
-        .offline-icon .disc {
-            position: relative; width: 56px; height: 56px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
-            background: rgba(207,102,121,0.14); color: var(--danger);
-        }
-        .offline-icon svg { width: 28px; height: 28px; }
-        .offline-card h2 { font-size: 1.3rem; }
-        .offline-card p { color: var(--text-muted); font-size: 0.92rem; line-height: 1.5; }
-        #retryBtn {
-            width: auto; margin-top: 0.7rem; padding: 0.5rem 1.3rem; font-size: 0.88rem; border-radius: 999px;
-            display: inline-flex; align-items: center; gap: 0.5rem;
-        }
-        #retryBtn .spinner {
-            display: none; width: 12px; height: 12px; border-radius: 50%;
-            border: 2px solid rgba(255,255,255,0.4); border-top-color: #fff; animation: spin 0.7s linear infinite;
-        }
-        #retryBtn.busy .spinner { display: inline-block; }
-        #offline-status { font-size: 0.78rem; color: var(--text-muted); opacity: 0.8; min-height: 1.1em; }
-        #gate { flex: 1; display: flex; align-items: center; justify-content: center; padding: 1rem; overflow-y: auto; animation: fadeIn 0.4s ease both; }
-        .card {
-            background-color: var(--panel-bg); padding: 2.5rem; border-radius: 12px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5); width: 100%; max-width: 420px;
-            display: flex; gap: 2rem; transition: max-width 0.35s cubic-bezier(.2,.8,.2,1);
-            animation: fadeUp 0.5s cubic-bezier(.2,.8,.2,1) both;
-        }
-        #guest-form, #account-area, #confirm-group, #register-notice, #local-accounts { animation: paneIn 0.3s ease both; }
-        .error:not(:empty) { animation: shake 0.35s ease; }
-        @keyframes shake { 20%, 60% { transform: translateX(-4px); } 40%, 80% { transform: translateX(4px); } }
-        .card.with-side { max-width: 720px; }
-        .card-main { flex: 1; min-width: 0; }
-        .tabs { display: flex; gap: 0.5rem; margin-bottom: 1.5rem; }
-        .tab { background: transparent; border: 1px solid #333; color: var(--text-muted); padding: 0.6rem; font-size: 0.9rem; }
-        .tab:hover { background: #2a2a2a; }
-        .tab.active { background: var(--accent); border-color: var(--accent); color: white; }
-        .notice { font-size: 0.8rem; color: var(--warn); margin-bottom: 1.2rem; line-height: 1.4; }
-        .hint { font-size: 0.8rem; color: var(--text-muted); margin-bottom: 1.2rem; line-height: 1.4; }
-        .error { color: var(--danger); font-size: 0.9rem; margin-bottom: 1rem; min-height: 1.2em; }
-        #local-accounts { width: 220px; flex-shrink: 0; border-left: 1px solid #333; padding-left: 2rem; }
-        #local-accounts .label { font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.6rem; }
-        .acct { display: flex; gap: 0.4rem; margin-bottom: 0.4rem; }
-        .acct .pick { background: #2a2a2a; text-align: left; font-weight: normal; padding: 0.6rem 0.8rem; }
-        .acct .pick:hover { background: #333; transform: translateX(2px); }
-        .acct .forget { width: auto; background: transparent; border: 1px solid #333; color: var(--danger); padding: 0.6rem 0.8rem; }
+/* progress */
+.progress:not([style*="none"]) { animation: fade-up .4s ease both; }
+.track { position: relative; }
+.fill { transition: width .5s cubic-bezier(.2, .8, .3, 1); background-image: linear-gradient(90deg, #bdbdbd, #fff, #bdbdbd); background-size: 200% 100%; animation: shimmer 1.6s linear infinite; box-shadow: 0 0 10px rgba(255, 255, 255, .35); border-radius: 2px; }
+.stats b { transition: color .2s ease; }
 
-        /* --- Shared chat pieces --- */
-        .chat-header {
-            padding: 1rem 1.2rem; background-color: var(--side-bg); display: flex;
-            justify-content: space-between; align-items: center; gap: 0.8rem; border-bottom: 1px solid #333;
-        }
-        .chat-header h2 { font-size: 1.2rem; margin: 0; color: var(--accent); }
-        .chat-messages { flex: 1; padding: 1.5rem; overflow-y: auto; display: flex; flex-direction: column; gap: 0.8rem; scroll-behavior: smooth; }
-        .chat-messages.swap { animation: paneIn 0.28s ease both; }
-        .chat-messages.empty { align-items: center; justify-content: center; color: var(--text-muted); text-align: center; }
-        .message { max-width: min(75%, 700px); padding: 0.7rem 1.1rem; border-radius: 15px; line-height: 1.4; word-wrap: break-word; overflow-wrap: anywhere; }
-        .message.pop { animation: popIn 0.28s cubic-bezier(.2,.8,.2,1) both; }
-        .msg-self { background-color: var(--msg-self); align-self: flex-end; border-bottom-right-radius: 2px; }
-        .msg-other { background-color: var(--msg-other); align-self: flex-start; border-bottom-left-radius: 2px; }
-        .msg-error { background-color: transparent; border: 1px solid var(--danger); color: var(--danger); }
-        .msg-sender { font-size: 0.75rem; margin-bottom: 0.3rem; opacity: 0.8; font-weight: bold; }
-        .msg-time { font-size: 0.65rem; opacity: 0.6; margin-top: 0.3rem; text-align: right; }
-        .input-area { padding: 1rem; background-color: var(--side-bg); border-top: 1px solid #333; display: flex; gap: 0.5rem; }
-        .input-area input {
-            flex: 1; padding: 0.8rem 1.1rem; border-radius: 20px; border: 1px solid #333;
-            background-color: #2a2a2a; color: white; outline: none; font-size: 1rem;
-            transition: border-color 0.2s ease, box-shadow 0.2s ease;
-        }
-        .input-area input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(187,134,252,0.15); }
-        .input-area button { width: auto; padding: 0.8rem 1.5rem; border-radius: 20px; }
-        .outline-btn { width: auto; padding: 0.5rem 1rem; font-size: 0.85rem; background: transparent; border: 1px solid var(--danger); color: var(--danger); }
-        .outline-btn:hover { background: rgba(207,102,121,0.15); }
+/* messages */
+.msg { animation: fade-up .35s cubic-bezier(.2, .8, .3, 1) both; }
+.msg.err { animation: fade-up .35s cubic-bezier(.2, .8, .3, 1) both, shake .5s .1s cubic-bezier(.36, .07, .19, .97) both; }
+.msg.ok { animation: pop-in .4s cubic-bezier(.2, .8, .3, 1) both; }
+.msg.warn { animation: fade-up .35s cubic-bezier(.2, .8, .3, 1) both, glow-warn 3.2s 1s ease-in-out infinite; }
+.recovery { animation: pop-in .5s cubic-bezier(.2, .8, .3, 1) both, glow-warn 3.2s 1s ease-in-out infinite; }
 
-        /* --- Screen entrances --- */
-        #guest-screen, #app-shell { animation: fadeIn 0.4s ease both; }
+/* result links */
+.result-item { animation: fade-up .45s cubic-bezier(.2, .8, .3, 1) both; }
+.result-item:nth-child(2) { animation-delay: .08s; } .result-item:nth-child(3) { animation-delay: .16s; } .result-item:nth-child(n+4) { animation-delay: .24s; }
+.result-link { transition: border-color .25s ease, background-color .25s ease, transform .25s ease; }
+.result-link:hover { border-color: #4a4a4a; background: #1a1a1a; transform: translateX(3px); }
 
-        /* --- Guest chat (full page) --- */
-        #guest-screen { display: none; flex: 1; min-width: 0; flex-direction: column; background-color: var(--panel-bg); }
+/* cards */
+.card, .settings-sec, .fcard { transition: border-color .25s ease, transform .3s cubic-bezier(.2, .8, .3, 1), box-shadow .3s ease, background-color .25s ease; }
+.card { animation: fade-up .45s cubic-bezier(.2, .8, .3, 1) backwards; }
+.card:hover, .settings-sec:hover { border-color: #333; }
+.settings-sec.danger:hover { border-color: #5a2828; }
+.settings-sec:not(.hidden) { animation: fade-up .5s cubic-bezier(.2, .8, .3, 1) both; }
+.settings-sec:nth-of-type(2) { animation-delay: .1s; }
+.fcard { animation: pop-in .5s cubic-bezier(.2, .8, .3, 1) backwards; }
+.fcard:hover { transform: translateY(-4px); border-color: #383838; background: #191919; box-shadow: 0 14px 30px rgba(0, 0, 0, .5); }
+.fcard:nth-child(1) { animation-delay: .02s; } .fcard:nth-child(2) { animation-delay: .06s; } .fcard:nth-child(3) { animation-delay: .1s; } .fcard:nth-child(4) { animation-delay: .14s; }
+.fcard:nth-child(5) { animation-delay: .18s; } .fcard:nth-child(6) { animation-delay: .22s; } .fcard:nth-child(7) { animation-delay: .26s; } .fcard:nth-child(8) { animation-delay: .3s; } .fcard:nth-child(n+9) { animation-delay: .34s; }
 
-        /* --- Account app (full page) --- */
-        #app-shell { display: none; flex: 1; min-width: 0; background-color: var(--panel-bg); }
-        #sidebar { width: 300px; flex-shrink: 0; border-right: 1px solid #333; background: var(--side-bg); display: flex; flex-direction: column; }
-        #user-header { padding: 1rem; border-bottom: 1px solid #333; display: flex; align-items: center; gap: 0.8rem; }
-        #avatar {
-            width: 40px; height: 40px; border-radius: 50%; background: var(--accent);
-            display: flex; align-items: center; justify-content: center; font-weight: bold; flex-shrink: 0;
-        }
-        #user-meta { flex: 1; min-width: 0; }
-        #user-name { font-weight: bold; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-        #user-fp { font-size: 0.65rem; color: var(--text-muted); font-family: monospace; }
-        #logoutBtn:hover { background: rgba(207,102,121,0.15); }
-        #logoutBtn { width: auto; padding: 0.4rem 0.8rem; font-size: 0.8rem; background: transparent; border: 1px solid var(--danger); color: var(--danger); }
-        #sidebar-body { flex: 1; padding: 0.5rem 0; overflow-y: auto; }
+/* table */
+tbody tr { animation: fade-up .4s cubic-bezier(.2, .8, .3, 1) both; transition: background-color .2s ease; }
+tbody tr:hover { background: #151515; }
+tbody tr:nth-child(1) { animation-delay: .02s; } tbody tr:nth-child(2) { animation-delay: .05s; } tbody tr:nth-child(3) { animation-delay: .08s; } tbody tr:nth-child(4) { animation-delay: .11s; }
+tbody tr:nth-child(5) { animation-delay: .14s; } tbody tr:nth-child(6) { animation-delay: .17s; } tbody tr:nth-child(7) { animation-delay: .2s; } tbody tr:nth-child(8) { animation-delay: .23s; } tbody tr:nth-child(n+9) { animation-delay: .26s; }
+.badge { transition: border-color .25s ease, color .25s ease, background-color .25s ease; }
+.badge.on { animation: pop-in .4s ease both; }
+#empty:not(.hidden) { animation: fade-up .5s .15s ease both; }
 
-        .side-section { padding: 0.8rem 1rem; }
-        .side-title { font-size: 0.7rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 0.5rem; }
-        .side-empty { font-size: 0.8rem; color: var(--text-muted); line-height: 1.4; }
-        .side-msg { font-size: 0.8rem; margin-top: 0.4rem; min-height: 1em; }
-        .side-msg:not(:empty) { animation: paneIn 0.25s ease both; }
-        .side-msg.ok { color: var(--ok); }
-        .side-msg.err { color: var(--danger); }
-        .add-row { display: flex; gap: 0.4rem; }
-        .add-row input { flex: 1; min-width: 0; padding: 0.55rem 0.7rem; border-radius: 6px; border: 1px solid #333; background: #2a2a2a; color: white; outline: none; }
-        .add-row input { transition: border-color 0.2s ease, box-shadow 0.2s ease; }
-        .add-row input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(187,134,252,0.15); }
-        .mini-btn { width: auto; padding: 0.45rem 0.8rem; font-size: 0.8rem; }
-        .mini-btn.ghost { background: transparent; border: 1px solid #444; color: var(--text-muted); }
-        .mini-btn.ghost:hover { background: #2a2a2a; }
-        .row { display: flex; align-items: center; gap: 0.4rem; padding: 0.35rem 0; }
-        .row .name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-        .friend {
-            display: flex; align-items: center; gap: 0.6rem; padding: 0.55rem 0.7rem; border-radius: 8px;
-            cursor: pointer; margin-bottom: 2px;
-            transition: background-color 0.2s ease, transform 0.2s ease;
-        }
-        .friend:hover { background: #262626; transform: translateX(3px); }
-        .friend.active { background: #2f2540; }
-        .friend .mini-avatar {
-            transition: background-color 0.2s ease, transform 0.2s ease;
-            width: 28px; height: 28px; border-radius: 50%; background: #3a3a3a; flex-shrink: 0;
-            display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: bold;
-        }
-        .friend:hover .mini-avatar { background: #4a4a4a; transform: scale(1.08); }
-        .friend.active .mini-avatar { background: var(--accent); color: #111; }
-        .friend .name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-        .badge { background: var(--accent); color: #111; border-radius: 10px; font-size: 0.7rem; font-weight: bold; padding: 0.1rem 0.5rem; }
+/* misc */
+code { transition: color .2s ease; } .result-link:hover code { color: #bbb; }
 
-        #main-pane { flex: 1; min-width: 0; display: flex; flex-direction: column; }
-        .hdr-left { display: flex; align-items: center; gap: 0.8rem; min-width: 0; }
-        #chat-sub { font-size: 0.7rem; color: var(--text-muted); font-family: monospace; }
-        #chat-actions { display: flex; gap: 0.5rem; flex-shrink: 0; }
-        #backBtn { display: none; width: auto; padding: 0.4rem 0.8rem; background: transparent; border: 1px solid #444; }
-
-        @media (prefers-reduced-motion: reduce) {
-            *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; }
-        }
-
-        @media (max-width: 700px) {
-            #sidebar { width: 100%; border-right: none; }
-            #main-pane { display: none; }
-            #app-shell.chat-open #sidebar { display: none; }
-            #app-shell.chat-open #main-pane { display: flex; }
-            #backBtn { display: inline-block; }
-            .message { max-width: 88%; }
-            .card { padding: 1.5rem; }
-            .card.with-side { flex-direction: column; gap: 1.2rem; }
-            #local-accounts { width: auto; border-left: none; padding-left: 0; border-top: 1px solid #333; padding-top: 1.2rem; }
-        }
-    </style>
-    <script>
-        // If this device was signed in last time, hide the start screen until the session check finishes.
-        try { if (localStorage.getItem('strife_resume')) document.documentElement.classList.add('booting'); } catch (e) {}
-    </script>
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+  .modal-back, .modal, .modal-back.out, .modal-back.out .modal { animation: none; }
+}
+</style>
 </head>
 <body>
+<div class="wrap" id="app">
+  <nav id="nav"></nav>
 
-    <!-- Shown when the server can't be reached (nothing works without it) -->
-    <div id="offline" hidden role="alert">
-        <div class="offline-card">
-            <div class="offline-icon">
-                <div class="disc">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                        <path d="M2 8.8a15 15 0 0 1 4-2.5M22 8.8a15 15 0 0 0-9.3-4.7M5 12.9a10 10 0 0 1 3.2-2M19 12.9a10 10 0 0 0-3-2.1M8.5 16.4a5 5 0 0 1 7 0"/>
-                        <circle cx="12" cy="20" r="0.8" fill="currentColor"/>
-                        <path d="M3 3l18 18"/>
-                    </svg>
-                </div>
-            </div>
-            <h2>Server unreachable</h2>
-            <p>Strife can't reach its server right now, so nothing will work until it's back.</p>
-            <button type="button" id="retryBtn"><span class="spinner"></span><span id="retryLabel">Retry now</span></button>
-            <div id="offline-status" aria-live="polite"></div>
-        </div>
+  <!-- upload: / -->
+  <section id="v-upload" class="hidden">
+    <h1>Upload</h1>
+    <p class="sub" id="up-sub"></p>
+    <div class="drop" id="drop"><input type="file" id="file" multiple>Drop files here, or click to choose<div class="picked" id="picked"></div></div>
+    <label class="field">Keep the file for <select id="expiry"></select></label>
+    <label class="check hidden" id="pubRow"><input type="checkbox" id="pub" checked> Anyone with the link can download (you can change this later in My files)</label>
+    <div id="ts"></div>
+    <div class="actions"><button class="primary" id="btn">Upload</button><button id="cancel" disabled>Cancel</button></div>
+    <div class="progress" id="prog">
+      <div class="track"><div class="fill" id="fill"></div></div>
+      <div class="stats"><span><b id="ppct">0%</b></span><span><b id="psent">0 B</b> / <b id="ptotal">0 B</b></span><span><b id="pspeed">-</b></span><span>ETA <b id="peta">-</b></span><span id="pstatus"></span></div>
     </div>
+    <div class="result" id="result"></div>
+  </section>
 
-    <!-- Start screen: guest rooms or account -->
-    <div id="gate">
-        <div class="card" id="card">
-            <div class="card-main">
-                <h1>Strife</h1>
+  <!-- download: /?d=<id>#<key> -->
+  <section id="v-download" class="hidden">
+    <h1>Download</h1>
+    <p class="sub">Decrypted in your browser. The server only holds scrambled data.</p>
+    <div class="card"><div class="name" id="fname">Loading...</div><div class="meta" id="fmeta"></div></div>
+    <div class="progress" id="d-prog"><div class="track"><div class="fill" id="d-fill"></div></div><div class="stats"><span><b id="d-pct">0%</b></span><span id="d-status"></span></div></div>
+    <div id="d-out"></div>
+    <div class="actions"><button class="primary" id="dl" disabled>Download</button></div>
+  </section>
 
-                <div class="tabs">
-                    <button type="button" class="tab active" id="tab-guest">Guest</button>
-                    <button type="button" class="tab" id="tab-login">Log in</button>
-                    <button type="button" class="tab" id="tab-register">Register</button>
-                </div>
-
-                <!-- Guest: shared-passphrase room, no account -->
-                <form id="guest-form">
-                    <p class="hint">No account needed. Share the room code and passphrase with the people you want to talk to.</p>
-                    <div class="input-group">
-                        <label for="guestName">Display name</label>
-                        <input type="text" id="guestName" maxlength="32" placeholder="e.g. Keira" autocomplete="off">
-                    </div>
-                    <div class="input-group">
-                        <label for="roomCode">Room Code</label>
-                        <input type="text" id="roomCode" placeholder="e.g. session-17625843" autocomplete="off">
-                    </div>
-                    <div class="input-group">
-                        <label for="encKey">Encryption Key (Password)</label>
-                        <input type="password" id="encKey" placeholder="use a long, random passphrase" autocomplete="off">
-                    </div>
-                    <div class="error" id="guest-error"></div>
-                    <button type="submit" id="joinBtn">Join Room</button>
-                </form>
-
-                <!-- Account: login / register -->
-                <div id="account-area" style="display:none;">
-                    <p class="hint">An account lets you add friends and send dedicated direct messages.</p>
-                    <form id="auth-form">
-                        <div class="input-group">
-                            <label for="username">Username</label>
-                            <input type="text" id="username" maxlength="32" autocomplete="username">
-                        </div>
-                        <div class="input-group">
-                            <label for="password">Password</label>
-                            <input type="password" id="password" autocomplete="current-password">
-                        </div>
-                        <div class="input-group" id="confirm-group" style="display:none;">
-                            <label for="password2">Confirm password</label>
-                            <input type="password" id="password2" autocomplete="new-password">
-                        </div>
-                        <div class="notice" id="register-notice" style="display:none;">
-                            Your password also protects your encryption key. The server cannot reset or recover it:
-                            if you forget it, your messages are permanently lost.
-                        </div>
-                        <div class="error" id="auth-error"></div>
-                        <button type="submit" id="authBtn">Log in</button>
-                    </form>
-                </div>
-            </div><!-- /card-main -->
-
-            <div id="local-accounts" style="display:none;">
-                <div class="label">Accounts on this device</div>
-                <div id="local-accounts-list"></div>
-            </div>
-        </div><!-- /card -->
-    </div><!-- /gate -->
-
-    <!-- Guest chat -->
-    <div id="guest-screen">
-        <div class="chat-header">
-            <h2 id="room-title">Room: ...</h2>
-            <button id="leaveBtn" class="outline-btn">Leave</button>
-        </div>
-        <div class="chat-messages" id="guest-messages"></div>
-        <div class="input-area">
-            <input type="text" id="messageInput" maxlength="4000" placeholder="Type an encrypted message..." autocomplete="off">
-            <button id="sendBtn">Send</button>
-        </div>
+  <!-- login, signup, recover: /login -->
+  <section id="v-login" class="hidden">
+    <div class="tabs" id="tabs"><button data-tab="login" class="active">Log in</button><button data-tab="signup">Create account</button><button data-tab="recover">Forgot password</button></div>
+    <form id="login">
+      <h1>Log in</h1><p class="sub">An account is optional. It lets you upload bigger files, keep them forever, and manage them in one place.</p>
+      <label class="field">Username <input type="text" id="l-user" autocomplete="username" autocapitalize="none" spellcheck="false"></label>
+      <label class="field">Password <input type="password" id="l-pass" autocomplete="current-password"></label>
+      <div class="actions"><button class="primary" type="submit">Log in</button></div>
+    </form>
+    <form id="signup" class="hidden">
+      <h1>Create account</h1><p class="sub">No email needed. Just a username and a password.</p>
+      <label class="field">Username (a-z, 0-9, _ . -) <input type="text" id="s-user" autocomplete="username" autocapitalize="none" spellcheck="false"></label>
+      <label class="field">Password (at least 10 characters) <input type="password" id="s-pass" autocomplete="new-password"></label>
+      <label class="field">Repeat password <input type="password" id="s-pass2" autocomplete="new-password"></label>
+      <div class="msg warn">Your files are encrypted with a key made from your password. Nobody, including the site owner, can reset it for you. You will get a <b>recovery key</b> on the next screen. Save it, it is the only way back in if you forget your password.</div>
+      <div id="s-ts"></div>
+      <div class="actions"><button class="primary" type="submit">Create account</button></div>
+    </form>
+    <div id="recovery" class="hidden">
+      <h1>Save your recovery key</h1><p class="sub">This is shown only once. If you forget your password, this key is the only way to get your files back.</p>
+      <div class="recovery" id="rk"></div>
+      <div class="actions"><button id="rk-copy">Copy</button><button id="rk-save">Download as .txt</button></div>
+      <label class="check"><input type="checkbox" id="rk-ok"> I have saved my recovery key somewhere safe</label>
+      <div class="actions"><button class="primary" id="rk-go" disabled>Continue</button></div>
     </div>
+    <form id="recover" class="hidden">
+      <h1>Forgot password</h1><p class="sub">Use the recovery key you saved when you created your account to set a new password.</p>
+      <label class="field">Username <input type="text" id="r-user" autocomplete="username" autocapitalize="none" spellcheck="false"></label>
+      <label class="field">Recovery key <input type="text" id="r-key" autocomplete="off" spellcheck="false" placeholder="XXXX-XXXX-XXXX-..."></label>
+      <label class="field">New password (at least 10 characters) <input type="password" id="r-pass" autocomplete="new-password"></label>
+      <div class="actions"><button class="primary" type="submit">Set new password</button></div>
+    </form>
+    <div id="l-out"></div>
+  </section>
 
-    <!-- Account app -->
-    <div id="app-shell">
-        <div id="sidebar">
-            <div id="user-header">
-                <div id="avatar"></div>
-                <div id="user-meta">
-                    <div id="user-name"></div>
-                    <div id="user-fp"></div>
-                </div>
-                <button id="logoutBtn">Log out</button>
-            </div>
-            <div id="sidebar-body">
-                <div class="side-section">
-                    <div class="side-title">Add friend</div>
-                    <form id="add-form" class="add-row">
-                        <input type="text" id="addName" maxlength="32" placeholder="Username" autocomplete="off">
-                        <button type="submit" class="mini-btn">Add</button>
-                    </form>
-                    <div class="side-msg" id="add-msg"></div>
-                </div>
+  <!-- my files: /dashboard -->
+  <section id="v-dashboard" class="hidden">
+    <div class="dash-head">
+      <h1>My files</h1>
+      <p class="sub" id="dash-sub">Only you can see this list. File names are encrypted, the server can't read them.</p>
+      <div class="view-toggle" id="vtoggle"><button data-mode="grid">Grid</button><button data-mode="list">List</button></div>
+    </div>
+    <div id="gate"></div><div id="dash-out"></div>
+    <div id="grid" class="grid hidden"></div>
+    <table id="tbl" class="hidden"><thead><tr><th>Name</th><th>Size</th><th>Expires</th><th>Keep for</th><th></th></tr></thead><tbody id="rows"></tbody></table>
+    <p id="empty" class="small hidden" style="text-align:center">No files yet. <a href="/">Upload something.</a></p>
+  </section>
 
-                <div class="side-section" id="req-section" hidden>
-                    <div class="side-title">Requests</div>
-                    <div id="req-list"></div>
-                </div>
+  <!-- settings: /?settings -->
+  <section id="v-settings" class="hidden">
+    <h1>Settings</h1>
+    <p class="sub" id="set-sub"></p>
+    <div class="settings-sec">
+      <h2>Change password</h2>
+      <form id="pwform">
+        <label class="field">Current password <input type="password" id="pw-old" autocomplete="current-password"></label>
+        <label class="field">New password (at least 10 characters) <input type="password" id="pw-new" autocomplete="new-password"></label>
+        <div class="actions"><button type="submit">Change password</button></div>
+      </form>
+      <div id="pwgate"></div><div id="pwout"></div>
+    </div>
+    <div class="settings-sec danger">
+      <h2>Delete account</h2>
+      <p class="small">This permanently deletes your account and every file you uploaded, including the stored data and all share links. It cannot be undone and nobody can recover it, not even with your recovery key.</p>
+      <form id="delform">
+        <label class="field">Type your username to confirm <input type="text" id="del-user" autocomplete="off" autocapitalize="none" spellcheck="false"></label>
+        <label class="field">Password <input type="password" id="del-pw" autocomplete="current-password"></label>
+        <div class="actions"><button class="danger-solid" type="submit">Delete my account and all data</button></div>
+      </form>
+      <div id="delout"></div>
+    </div>
+  </section>
+</div>
 
-                <div class="side-section">
-                    <div class="side-title">Friends</div>
-                    <div id="friend-list"></div>
-                    <div class="side-empty" id="friend-empty">No friends yet. Add someone by username.</div>
-                </div>
+<script src="/argon2.min.js"></script>
+<script type="module">
+// --- crypto (all of this runs in the browser, the server never sees plaintext) ---
+const TAG = 16;                 // gcm tag, added to every chunk
+const enc = new TextEncoder(), dec = new TextDecoder(), subtle = crypto.subtle;
+const rand = (n) => crypto.getRandomValues(new Uint8Array(n));
 
-                <div class="side-section" id="blocked-section" hidden>
-                    <div class="side-title">Blocked</div>
-                    <div id="blocked-list"></div>
-                </div>
-            </div>
-        </div>
+function b64u(bytes) {
+  let s = '';
+  for (let i = 0; i < bytes.length; i += 8192) s += String.fromCharCode(...bytes.subarray(i, i + 8192));
+  return btoa(s).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+function unb64u(str) {
+  const bin = atob(str.replace(/-/g, '+').replace(/_/g, '/'));
+  return Uint8Array.from(bin, (c) => c.charCodeAt(0));
+}
+const B32 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+function base32(bytes) {
+  let bits = 0, val = 0, out = '';
+  for (const b of bytes) { val = (val << 8) | b; bits += 8; while (bits >= 5) { out += B32[(val >>> (bits - 5)) & 31]; bits -= 5; } }
+  return bits ? out + B32[(val << (5 - bits)) & 31] : out;
+}
+function unbase32(str) {
+  let bits = 0, val = 0; const out = [];
+  for (const ch of str) {
+    const i = B32.indexOf(ch);
+    if (i < 0) throw new Error('Invalid recovery key.');
+    val = (val << 5) | i; bits += 5;
+    if (bits >= 8) { out.push((val >>> (bits - 8)) & 255); bits -= 8; }
+  }
+  return new Uint8Array(out);
+}
+async function hkdf(ikm, info) {
+  const k = await subtle.importKey('raw', ikm, 'HKDF', false, ['deriveBits']);
+  return new Uint8Array(await subtle.deriveBits({ name: 'HKDF', hash: 'SHA-256', salt: new Uint8Array(32), info: enc.encode(info) }, k, 256));
+}
+const aesKey = (raw) => subtle.importKey('raw', raw, 'AES-GCM', false, ['encrypt', 'decrypt']);
 
-        <div id="main-pane">
-            <div class="chat-header">
-                <div class="hdr-left">
-                    <button id="backBtn" title="Back">&larr;</button>
-                    <div>
-                        <h2 id="chat-title">Welcome</h2>
-                        <div id="chat-sub"></div>
-                    </div>
-                </div>
-                <div id="chat-actions" hidden>
-                    <button id="removeBtn" class="outline-btn">Remove</button>
-                    <button id="blockBtn" class="outline-btn">Block</button>
-                </div>
-            </div>
-            <div class="chat-messages empty" id="app-messages">Pick a friend on the left to start an encrypted conversation.</div>
-            <div class="input-area" id="dm-input" hidden>
-                <input type="text" id="dmText" maxlength="4000" placeholder="Type an encrypted message..." autocomplete="off">
-                <button id="dmSend">Send</button>
-            </div>
-        </div><!-- /main-pane -->
-    </div><!-- /app-shell -->
+// each file gets its own random key. we split it into one for the data and one for the name/metadata
+const newFileKey = () => rand(32);
+const chunkCount = (size, chunk) => Math.max(1, Math.ceil(size / chunk));
+async function fileKeys(fileKey) {
+  return { data: await aesKey(await hkdf(fileKey, 'petabox-data-v1')), meta: await aesKey(await hkdf(fileKey, 'petabox-meta-v1')) };
+}
+// nonce is just the chunk number (fine, every file has its own key). the aad pins each chunk to its
+// position and says whether it's the last one, so reordering, repeating or chopping off chunks breaks decryption
+const nonce = (i) => { const n = new Uint8Array(12); new DataView(n.buffer).setUint32(8, i); return n; };
+const aad = (i, last) => { const a = new Uint8Array(5); new DataView(a.buffer).setUint32(0, i); a[4] = last ? 1 : 0; return a; };
+const encryptChunk = async (key, i, last, plain) => new Uint8Array(await subtle.encrypt({ name: 'AES-GCM', iv: nonce(i), additionalData: aad(i, last) }, key, plain));
+const decryptChunk = async (key, i, last, ct) => new Uint8Array(await subtle.decrypt({ name: 'AES-GCM', iv: nonce(i), additionalData: aad(i, last) }, key, ct));
 
-    <script>
-        // --- Config ---
-        const API = "https://kei.mt/chat/api.php"; // change if api.php moves
-        const RESUME_HINT = 'strife_resume';        // set while signed in, so boot can skip the start screen
-        const PBKDF2_ITERATIONS = 600000;         // OWASP 2023+ guidance
-        const SYNC_MS = 3000;
+async function encryptMeta(key, obj) {
+  const iv = rand(12), ct = new Uint8Array(await subtle.encrypt({ name: 'AES-GCM', iv }, key, enc.encode(JSON.stringify(obj))));
+  return b64u(Uint8Array.from([...iv, ...ct]));
+}
+async function decryptMeta(key, str) {
+  const raw = unb64u(str);
+  return JSON.parse(dec.decode(await subtle.decrypt({ name: 'AES-GCM', iv: raw.slice(0, 12) }, key, raw.slice(12))));
+}
 
-        const enc = new TextEncoder();
-        const dec = new TextDecoder();
-        const $ = (id) => document.getElementById(id);
+// password -> 64 bytes with argon2id (slow and memory hungry on purpose, makes guessing expensive).
+// first half is the login key (server hashes it again), second half never leaves the browser and unlocks the master key
+async function deriveFromPassword(password, salt) {
+  const out = await hashwasm.argon2id({
+    password: password.normalize('NFKC'), salt, parallelism: 1, iterations: 3, memorySize: 65536, hashLength: 64, outputType: 'binary',
+  });
+  return { authKey: out.slice(0, 32), wrapKey: out.slice(32) };
+}
+async function wrap(keyBytes, data, label) {
+  const iv = rand(12), ct = new Uint8Array(await subtle.encrypt({ name: 'AES-GCM', iv, additionalData: enc.encode(label) }, await aesKey(keyBytes), data));
+  return b64u(Uint8Array.from([...iv, ...ct]));
+}
+async function unwrap(keyBytes, str, label) {
+  const raw = unb64u(str);
+  return new Uint8Array(await subtle.decrypt({ name: 'AES-GCM', iv: raw.slice(0, 12), additionalData: enc.encode(label) }, await aesKey(keyBytes), raw.slice(12)));
+}
+const recoveryKeys = async (r) => ({ wrapKey: await hkdf(r, 'petabox-rec-wrap'), authKey: await hkdf(r, 'petabox-rec-auth') });
+const formatRecovery = (bytes) => base32(bytes).match(/.{1,4}/g).join('-');
+function parseRecovery(str) {
+  const b = unbase32(str.toUpperCase().replace(/[^A-Z2-7]/g, ''));
+  if (b.length !== 32) throw new Error('That recovery key looks incomplete.');
+  return b;
+}
+// signup: random master key, locked once with the password and once with a recovery key
+async function makeAccount(password) {
+  const salt = rand(16), masterKey = rand(32), recovery = rand(32);
+  const { authKey, wrapKey } = await deriveFromPassword(password, salt), rec = await recoveryKeys(recovery);
+  return {
+    masterKey, recoveryKey: formatRecovery(recovery),
+    send: { salt: b64u(salt), authKey: b64u(authKey), recoveryAuth: b64u(rec.authKey),
+      wrappedMasterPw: await wrap(wrapKey, masterKey, 'master-pw'), wrappedMasterRec: await wrap(rec.wrapKey, masterKey, 'master-rec') },
+  };
+}
+async function rewrapMaster(masterKey, newPassword) {
+  const salt = rand(16), { authKey, wrapKey } = await deriveFromPassword(newPassword, salt);
+  return { salt: b64u(salt), authKey: b64u(authKey), wrappedMasterPw: await wrap(wrapKey, masterKey, 'master-pw') };
+}
+async function recoverAccount(recoveryStr, wrappedMasterRec, newPassword) {
+  const rec = await recoveryKeys(parseRecovery(recoveryStr));
+  const masterKey = await unwrap(rec.wrapKey, wrappedMasterRec, 'master-rec'); // throws if the recovery key is wrong
+  return { masterKey, send: { ...(await rewrapMaster(masterKey, newPassword)), recoveryAuth: b64u(rec.authKey) } };
+}
+// file keys live on the server but are locked with the master key
+const wrapFileKey = async (master, fk) => wrap(await hkdf(master, 'petabox-filekeys'), fk, 'filekey');
+const unwrapFileKey = async (master, w) => unwrap(await hkdf(master, 'petabox-filekeys'), w, 'filekey');
 
-        // --- Byte helpers ---
-        function b64ToBytes(b64) {
-            const bin = atob(b64);
-            const out = new Uint8Array(bin.length);
-            for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
-            return out;
+// --- helpers ---
+const $ = (id) => document.getElementById(id);
+function el(tag, props = {}, ...kids) {
+  const n = document.createElement(tag);
+  for (const [k, v] of Object.entries(props)) k.startsWith('on') ? n.addEventListener(k.slice(2), v) : n.setAttribute(k, v);
+  n.append(...kids.flat().filter((x) => x != null));
+  return n;
+}
+// a styled replacement for confirm(). resolves true / false. escape or a click outside cancels
+function askConfirm(title, text, okLabel = 'Delete') {
+  return new Promise((resolve) => {
+    const prev = document.activeElement;
+    const cancel = el('button', {}, 'Cancel'), ok = el('button', { class: 'danger-solid' }, okLabel);
+    const back = el('div', { class: 'modal-back' }, el('div', { class: 'modal', role: 'dialog', 'aria-modal': 'true', 'aria-label': title },
+      el('h2', {}, title), el('p', {}, text), el('div', { class: 'actions' }, cancel, ok)));
+    let closed = false;
+    const done = (v) => {
+      if (closed) return; closed = true;
+      document.removeEventListener('keydown', onKey, true); back.classList.add('out');   // zoom out, then remove
+      setTimeout(() => back.remove(), matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 130);
+      if (prev && prev.focus) prev.focus(); resolve(v);
+    };
+    const onKey = (e) => {
+      if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); done(false); }
+      else if (e.key === 'Tab') { e.preventDefault(); (document.activeElement === cancel ? ok : cancel).focus(); }
+    };
+    cancel.onclick = () => done(false); ok.onclick = () => done(true);
+    back.addEventListener('mousedown', (e) => { if (e.target === back) done(false); });
+    document.addEventListener('keydown', onKey, true);
+    document.body.append(back); cancel.focus();   // cancel is focused first, so a stray Enter never deletes anything
+  });
+}
+function fmt(b) { const u = ['B', 'KB', 'MB', 'GB', 'TB']; let i = 0; while (b >= 1024 && i < 4) { b /= 1024; i++; } return (i ? b.toFixed(2) : b.toFixed(0)) + ' ' + u[i]; }
+function fmtTime(s) { if (!isFinite(s) || s < 0) return '-'; s = Math.round(s); const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60); return h ? `${h}h ${m}m` : m ? `${m}m ${s % 60}s` : `${s}s`; }
+function timeLeft(iso) {
+  if (!iso) return 'Never';
+  const s = (new Date(iso) - Date.now()) / 1000;
+  return s <= 0 ? 'Expired' : s < 3600 ? Math.ceil(s / 60) + ' min' : s < 86400 ? Math.floor(s / 3600) + ' h' : Math.floor(s / 86400) + ' days';
+}
+const LABELS = { '1h': '1 hour', '6h': '6 hours', '1d': '1 day', '3d': '3 days', '7d': '1 week', '14d': '2 weeks', '30d': '1 month', '90d': '3 months', '180d': '6 months', '365d': '1 year', never: 'Never (keep forever)' };
+const message = (box, kind, text) => box.replaceChildren(el('div', { class: 'msg ' + kind }, text));
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+// where the backend lives (a php file on the main site, like strife). change this if you move it
+const API = location.hostname === 'localhost' ? 'http://localhost:3000/api.php' : 'https://kei.mt/petabox/api.php';
+
+async function api(action, { body, query = '', headers = {}, signal } = {}) {
+  const res = await fetch(`${API}?action=${action}${query}`, {
+    method: body !== undefined ? 'POST' : 'GET', signal, credentials: 'include',
+    headers: { ...(body !== undefined ? { 'Content-Type': 'application/json' } : {}), ...headers },
+    body: body !== undefined ? JSON.stringify(body) : undefined,
+  });
+  let data = null; try { data = await res.json(); } catch { /* empty */ }
+  if (!res.ok) throw Object.assign(new Error(data?.error || `Request failed (${res.status})`), { status: res.status });
+  return data;
+}
+// the master key only lives in this tab (sessionStorage), the server never gets it
+const getMaster = () => { try { const v = sessionStorage.getItem('pb_mk'); return v ? unb64u(v) : null; } catch { return null; } };
+const setMaster = (k) => { try { sessionStorage.setItem('pb_mk', b64u(k)); } catch { /* private mode */ } };
+
+// both requests at once (they used to run one after the other)
+const [cfg, meRes] = await Promise.all([api('config'), api('me').catch(() => null)]);
+let user = meRes;
+
+// no master key in this tab yet (reload or new tab) so ask for the password again
+function ensureMaster(box) {
+  const have = getMaster();
+  if (have) return Promise.resolve(have);
+  return new Promise((resolve) => {
+    const pw = el('input', { type: 'password', placeholder: 'Your password', autocomplete: 'current-password' }), err = el('div'), go = el('button', { class: 'primary' }, 'Unlock');
+    const card = el('div', { class: 'card' }, el('div', { class: 'name' }, 'Unlock your files'),
+      el('p', { class: 'small' }, 'Your files are locked with a key that only exists in your browser. Enter your password to unlock it for this tab.'), pw, err, el('div', { class: 'actions' }, go));
+    const submit = async () => {
+      go.disabled = true; message(err, 'info', 'Unlocking...');
+      try { const { wrapKey } = await deriveFromPassword(pw.value, unb64u(user.salt)); const mk = await unwrap(wrapKey, user.wrappedMasterPw, 'master-pw'); setMaster(mk); card.remove(); resolve(mk); }
+      catch { message(err, 'err', 'Wrong password.'); go.disabled = false; }
+    };
+    go.onclick = submit; pw.addEventListener('keydown', (e) => e.key === 'Enter' && submit());
+    box.replaceChildren(card); pw.focus();
+  });
+}
+// turnstile captcha, only if the keys are set on the server
+async function mountTurnstile(box) {
+  if (!cfg.turnstileSiteKey) return { token: () => '', reset() {} };
+  await new Promise((ok, no) => { const s = el('script', { src: 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit' }); s.onload = ok; s.onerror = no; document.head.append(s); });
+  const id = turnstile.render(box, { sitekey: cfg.turnstileSiteKey, theme: 'dark' });
+  return { token: () => turnstile.getResponse(id) || '', reset: () => turnstile.reset(id) };
+}
+
+// --- nav, and picking which page to show ---
+document.title = cfg.siteName || 'PetaBox';
+$('nav').replaceChildren(
+  el('a', { class: 'brand', href: '/' }, cfg.siteName || 'PetaBox'), el('a', { href: '/' }, 'Upload'),
+  ...(user ? [el('a', { href: '/?dashboard' }, 'My files'), el('a', { href: '/?settings' }, 'Settings'),
+    el('button', { class: 'link', onclick: async () => { try { await api('logout', { body: {} }); } catch { /* */ } sessionStorage.clear(); location.href = '/'; } }, `Log out (${user.username})`)]
+    : [el('a', { href: '/?login' }, 'Log in / Sign up')]));
+
+// github pages can't do /d/abc style addresses, so the page is picked from the query: /?d=<id>  /?login  /?dashboard
+const query = new URLSearchParams(location.search);
+const view = query.has('d') ? 'download' : ['login', 'dashboard', 'settings'].find((v) => query.has(v)) || 'upload';
+$('v-' + view).classList.remove('hidden');
+if (view === 'dashboard') $('app').classList.add('wide');
+
+// --- upload page ---
+async function uploadPage() {
+  const GB = 1024 ** 3, PARALLEL = 4, result = $('result');
+  const ts = await mountTurnstile($('ts'));
+  let master = user ? getMaster() : null, files = [], aborter = null, cancelled = false;
+
+  $('expiry').replaceChildren(...(user ? cfg.userExpiry : cfg.anonExpiry).map((k) => el('option', { value: k }, LABELS[k] || k)));
+  $('expiry').value = user ? '30d' : '1d';
+  if (user) {
+    $('up-sub').textContent = `Logged in as ${user.username}. Up to ${cfg.maxUser / GB} GB per file, no storage limit, keep files as long as you like. Everything is encrypted in your browser first.`;
+    $('pubRow').classList.remove('hidden');
+  } else $('up-sub').textContent = `Files are encrypted in your browser before they leave your device. Up to ${cfg.maxAnon / GB} GB per file, kept for up to 1 month. Log in for ${cfg.maxUser / GB} GB files and unlimited storage time.`;
+
+  const setFiles = (list) => { files = [...list]; $('picked').textContent = files.map((f) => `${f.name} (${fmt(f.size)})`).join(', '); };
+  $('drop').addEventListener('dragover', (e) => { e.preventDefault(); $('drop').classList.add('over'); });$('drop').addEventListener('dragleave', () => $('drop').classList.remove('over'));$('drop').addEventListener('drop', (e) => { e.preventDefault(); $('drop').classList.remove('over'); setFiles(e.dataTransfer.files); });$('file').addEventListener('change', () => setFiles($('file').files));$('cancel').addEventListener('click', () => { cancelled = true; aborter?.abort(); });
+
+  // xhr instead of fetch because fetch can't do upload progress
+  // no progress callback on purpose: the browser's upload progress counts bytes handed to its network stack, not bytes the
+  // server has received, so it races ahead of reality. a chunk only counts once the server has answered. if a request makes no
+  // progress and gets no answer for STALL_MS it is aborted and retried (a stuck request would otherwise hang forever)
+  const STALL_MS = 180000;
+  const putChunk = (id, token, n, body, signal) => new Promise((resolve, reject) => {
+    const x = new XMLHttpRequest(), t0 = performance.now(); let tBody = t0, dog;
+    const arm = () => { clearTimeout(dog); dog = setTimeout(() => { reject(new Error('Stalled')); x.abort(); }, STALL_MS); };
+    x.open('POST', `${API}?action=upload_chunk&id=${id}&n=${n}`); x.withCredentials = true;
+    x.setRequestHeader('Content-Type', 'application/octet-stream'); x.setRequestHeader('X-Upload-Token', token);
+    x.upload.onprogress = arm; x.upload.onload = () => { tBody = performance.now(); arm(); };
+    x.onload = () => {
+      clearTimeout(dog);
+      if (x.status === 200) return resolve({ total: performance.now() - t0, wait: performance.now() - tBody });
+      let m = 'Upload failed'; try { m = JSON.parse(x.responseText).error || m; } catch { /* */ }
+      reject(Object.assign(new Error(m), { fatal: x.status >= 400 && x.status < 500 && x.status !== 408 && x.status !== 429 }));
+    };
+    x.onerror = () => { clearTimeout(dog); reject(new Error('Network error')); }; x.onabort = () => { clearTimeout(dog); reject(new Error('Cancelled')); };
+    signal.addEventListener('abort', () => x.abort(), { once: true });
+    arm(); x.send(body);
+  });
+
+  // if an upload fails, picking the same file again carries on where it stopped. the key is kept in this browser only
+  const rKey = (f) => `pb_resume:${f.name}:${f.size}:${f.lastModified}`;
+  const readResume = (f) => { try { return JSON.parse(localStorage.getItem(rKey(f))); } catch { return null; } };
+  const saveResume = (f, v) => { try { localStorage.setItem(rKey(f), JSON.stringify(v)); } catch { /* */ } };
+  const dropResume = (f) => { try { localStorage.removeItem(rKey(f)); } catch { /* */ } };
+
+  async function uploadOne(f, label) {
+    const status = (t) => ($('pstatus').textContent = t);
+    let fileKey, id, token, ch, received = new Set();
+    const rec = readResume(f);
+    if (rec && rec.user === (user?.username || '')) {
+      try { const st = await api('upload_status', { query: `&id=${rec.id}`, headers: { 'X-Upload-Token': rec.token } }); fileKey = new Uint8Array(rec.key); id = rec.id; token = rec.token; ch = st.chunkSize; received = new Set(st.received); status('Resuming...'); }
+      catch { dropResume(f); }
+    }
+    const keys = await fileKeys(fileKey ||= newFileKey());
+    if (!id) {
+      status('Preparing...');
+      const body = { size: f.size, expiry: $('expiry').value, public: user ? $('pub').checked : true, turnstile: ts.token(),
+        encMeta: await encryptMeta(keys.meta, { name: f.name, type: f.type || '', size: f.size }) };
+      if (user) body.wrappedKey = await wrapFileKey(master, fileKey);
+      else if (cfg.turnstileSiteKey && !body.turnstile) throw Object.assign(new Error('Please complete the captcha above first.'), { fatal: true });
+      const r = await api('upload_create', { body, signal: aborter.signal });
+      ts.reset(); id = r.id; token = r.uploadToken; ch = r.chunkSize;
+      saveResume(f, { id, token, key: [...fileKey], user: user?.username || '' });
+    }
+    // progress
+    const total = chunkCount(f.size, ch), encTotal = f.size + total * TAG;
+    const sent = new Array(total).fill(0);   // only chunks the server has confirmed
+    for (const n of received) sent[n] = n < total - 1 ? ch + TAG : f.size - n * ch + TAG;
+    const t0 = performance.now(), base = sent.reduce((a, b) => a + b, 0);
+    const update = () => {
+      const now = performance.now(), done = sent.reduce((a, b) => a + b, 0), p = (done / encTotal) * 100;
+      $('fill').style.width = p + '%'; $('ppct').textContent = p.toFixed(1) + '%'; $('psent').textContent = fmt(done); $('ptotal').textContent = fmt(encTotal);
+      const dt = (now - t0) / 1000;   // average over the whole upload, so the estimate settles instead of jumping with every part
+      if (dt > 2 && done > base) { const sp = (done - base) / dt; $('pspeed').textContent = fmt(sp) + '/s'; $('peta').textContent = fmtTime((encTotal - done) / sp); }
+    };
+    update();
+    let inflight = 0;   // parts handed to the network but not yet confirmed. shown so the page visibly keeps working before the first part confirms
+    const ticker = setInterval(() => {
+      update();
+      if ($('pstatus').textContent.includes('Uploading')) status(`${label}Uploading... ${inflight} part${inflight === 1 ? '' : 's'} in transit, ${fmtTime((performance.now() - t0) / 1000)} elapsed`);
+    }, 1000);
+    // a few workers, each one reads a chunk, encrypts it, uploads it. keeps memory low even for 10 GB
+    const todo = []; for (let n = 0; n < total; n++) if (!received.has(n)) todo.push(n);
+    let failure = null;
+    // the next chunk is read and encrypted while the current one uploads, so the connection never sits idle between chunks
+    const prep = (n) => f.slice(n * ch, Math.min(n * ch + ch, f.size)).arrayBuffer().then((b) => encryptChunk(keys.data, n, n === total - 1, new Uint8Array(b)));
+    async function worker() {
+      let next = todo.length ? todo.shift() : null, nextCt = next === null ? null : prep(next);
+      while (next !== null && !failure && !cancelled) {
+        const n = next, ct = await nextCt;
+        next = todo.length ? todo.shift() : null; nextCt = next === null ? null : prep(next);
+        for (let attempt = 1; ; attempt++) {
+          try { inflight++; const r = await putChunk(id, token, n, new Blob([ct]), aborter.signal).finally(() => inflight--); sent[n] = ct.length; update(); console.debug(`[petabox] part ${n + 1}/${total}: ${(r.total / 1000).toFixed(1)}s, of which ${(r.wait / 1000).toFixed(1)}s waiting for the server after the body was handed over`); break; }
+          catch (e) {
+            if (cancelled || e.fatal || attempt >= 5) { failure ||= e; return; }
+            sent[n] = 0; status(`Connection problem, retrying part ${n + 1} (${attempt}/4)...`); await sleep(1000 * attempt * attempt);
+          }
         }
-        function bytesToB64(bytes) {
-            const u8 = bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes);
-            let s = '';
-            for (let i = 0; i < u8.length; i++) s += String.fromCharCode(u8[i]);
-            return btoa(s);
-        }
+      }
+    }
+    status(label + 'Uploading...');
+    try { await Promise.all(Array.from({ length: Math.min(PARALLEL, todo.length) }, worker)); } finally { clearInterval(ticker); }
+    if (cancelled) throw new Error('Cancelled');
+    if (failure) throw failure;
+    status('Finishing...');
+    await api('upload_finish', { body: {}, query: `&id=${id}`, headers: { 'X-Upload-Token': token } });
+    dropResume(f);
+    return `${location.origin}/?d=${id}#${b64u(fileKey)}`;  // key goes after the #, browsers never send that part to the server
+  }
 
-        function scrollDown(box, smooth = true) {
-            box.scrollTo({ top: box.scrollHeight, behavior: smooth ? 'smooth' : 'auto' });
-        }
-        function popIn(el) { el.classList.add('pop'); return el; }
+  $('btn').addEventListener('click', async () => {
+    if (!files.length) return message(result, 'err', 'Please choose a file first.');
+    if (user && !master) { $('btn').disabled = true; master = await ensureMaster(result); $('btn').disabled = false; }
+    result.replaceChildren(); $('prog').style.display = 'block'; $('btn').disabled = true; $('cancel').disabled = false; cancelled = false;
+    let ok = 0;
+    for (const [i, f] of files.entries()) {
+      aborter = new AbortController();
+      try {
+        const link = await uploadOne(f, files.length > 1 ? `File ${i + 1}/${files.length}: ` : '');
+        const copy = el('button', { class: 'sm' }, 'Copy');
+        copy.onclick = () => navigator.clipboard.writeText(link).then(() => { copy.textContent = 'Copied'; setTimeout(() => (copy.textContent = 'Copy'), 2000); });
+        result.append(el('div', { class: 'result-item' }, el('div', { class: 'result-name' }, `${f.name} - ${fmt(f.size)}`), el('div', { class: 'result-link' }, el('code', {}, link), copy)));
+        ok++;
+      } catch (e) { result.append(el('div', { class: 'msg err' }, `${f.name}: ${cancelled ? 'Cancelled' : e.message}`)); if (cancelled) break; }
+    }
+    $('btn').disabled = false; $('cancel').disabled = true; $('pstatus').textContent = ok === files.length ? 'Done' : '';
+    if (ok) result.prepend(el('div', { class: 'msg info' }, user
+      ? 'Saved to My files. Anyone you give the full link to (including the part after the #) can decrypt it, if sharing is on.'
+      : "Anyone with this full link can download the file. The part after the # is the decryption key. We never see it, so we can't recover it. Keep the link safe."));
+  });
+}
 
-        // Message bubble (innerText only — no HTML injection)
-        function bubble(user, text, className, ts) {
-            const el = document.createElement('div');
-            el.className = `message ${className}`;
-            if (className.indexOf('msg-self') === -1 && user) {
-                const senderEl = document.createElement('div');
-                senderEl.className = 'msg-sender';
-                senderEl.innerText = user;
-                el.appendChild(senderEl);
+// --- download page ---
+async function downloadPage() {
+  const id = query.get('d') || '', keyStr = location.hash.slice(1), out = $('d-out'), dl = $('dl');
+  let meta, info, keys;
+  const bail = (a, b) => { $('fname').textContent = a; $('fmeta').textContent = b; };
+  try {
+    if (!keyStr) { bail('Invalid link', 'The link is missing its decryption key (the part after the #). Make sure you copied the whole link.'); return; }
+    keys = await fileKeys(unb64u(keyStr));
+    try { meta = await api('file_meta', { query: `&id=${id}` }); } catch { bail('File not found', 'This file does not exist, has expired, or is no longer shared.'); return; }
+    info = await decryptMeta(keys.meta, meta.encMeta);
+  } catch { bail('Wrong key', "This link's key does not match the file. Make sure you copied the whole link."); return; }
+
+  document.title = `${info.name} - ${cfg.siteName || 'PetaBox'}`;
+  $('fname').textContent = info.name;
+  $('fmeta').textContent = `${fmt(info.size)} - expires: ${meta.expiresAt ? timeLeft(meta.expiresAt) : 'never'}${meta.owner ? ' - your file' : ''}`;
+  dl.disabled = false;
+
+  // where the decrypted data goes. chrome/edge: straight to disk. firefox/safari: through the service worker (/sw.js). otherwise memory
+  async function openSink() {
+    if (window.showSaveFilePicker) {
+      try { const w = await (await showSaveFilePicker({ suggestedName: info.name })).createWritable(); return { write: (b) => w.write(b), close: () => w.close(), abort: () => w.abort() }; }
+      catch (e) { if (e.name === 'AbortError') return null; }
+    }
+    if ('serviceWorker' in navigator) {
+      try {
+        const reg = await navigator.serviceWorker.register('/sw.js'); await navigator.serviceWorker.ready;
+        const worker = reg.active; while (worker.state !== 'activated') await sleep(50);
+        const { port1, port2 } = new MessageChannel(), dlId = crypto.randomUUID();
+        let credits = 0, wake = null, cancelled = false, started = false;
+        port1.onmessage = (m) => { if (m.data === 'ok') credits++; else if (m.data === 'cancel') cancelled = true; wake?.(); };
+        worker.postMessage({ id: dlId, name: info.name, size: info.size, port: port2 }, [port2]);
+        const a = el('a', { href: `/_dl/${dlId}` }); document.body.append(a); a.click(); a.remove();
+        return {
+          async write(b) {
+            const t0 = Date.now();
+            while (credits === 0 && !cancelled) {
+              await new Promise((r) => { wake = r; setTimeout(r, 1000); });
+              if (!started && Date.now() - t0 > 20000) throw Object.assign(new Error('The browser did not start the download. Reload the page and try again.'), { fatal: true });
             }
-            const textEl = document.createElement('div');
-            textEl.innerText = text;
-            el.appendChild(textEl);
-            if (ts) {
-                const t = document.createElement('div');
-                t.className = 'msg-time';
-                t.innerText = new Date(ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                el.appendChild(t);
+            started = true;
+            if (cancelled) throw Object.assign(new Error('Download was cancelled.'), { fatal: true });
+            credits--; port1.postMessage(b, [b.buffer]);
+          },
+          close: async () => port1.postMessage(null), abort: async () => port1.postMessage('abort'),
+        };
+      } catch { /* fall back to memory */ }
+    }
+    const parts = [];
+    return { inMemory: true, write: async (b) => { parts.push(b); }, abort: async () => { parts.length = 0; },
+      close: async () => { const a = el('a', { href: URL.createObjectURL(new Blob(parts, { type: info.type || 'application/octet-stream' })), download: info.name }); document.body.append(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 30 * 60e3); } };
+  }
+
+  dl.addEventListener('click', async () => {
+    const ENC = meta.chunkSize + TAG, total = meta.chunks, encTotal = meta.size + total * TAG, expectedLen = (i) => (i < total - 1 ? ENC : encTotal - i * ENC);
+    const sink = await openSink(); if (!sink) return;
+    out.replaceChildren();
+    if (sink.inMemory && info.size > 2 * 1024 ** 3) message(out, 'warn', 'Your browser has to keep the whole file in memory. For big files, use Chrome, Edge or Firefox.');
+    $('d-prog').style.display = 'block'; dl.disabled = true;
+    const progress = (i) => { const p = (i / total) * 100; $('d-fill').style.width = p + '%'; $('d-pct').textContent = p.toFixed(0) + '%'; };
+    progress(0);
+    let idx = 0, attempts = 0;
+    try {
+      while (idx < total) {  // one streaming request, if it drops we start again from the chunk we were on
+        let cur = new Uint8Array(expectedLen(idx)), fill = 0;
+        try {
+          $('d-status').textContent = 'Downloading and decrypting...';
+          const res = await fetch(`${API}?action=file_blob&id=${id}`, { credentials: 'include', headers: { Range: `bytes=${idx * ENC}-` } });
+          if (res.status !== 206 && !(res.status === 200 && idx === 0)) throw Object.assign(new Error(`Server returned ${res.status}`), { fatal: res.status === 404 });
+          const reader = res.body.getReader();
+          for (;;) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            for (let p = 0; p < value.length && idx < total;) {
+              const take = Math.min(value.length - p, cur.length - fill);
+              cur.set(value.subarray(p, p + take), fill); fill += take; p += take;
+              if (fill === cur.length) {
+                let plain;
+                try { plain = await decryptChunk(keys.data, idx, idx === total - 1, cur); } catch { throw Object.assign(new Error('Decryption failed: the file is corrupted or the key is wrong.'), { fatal: true }); }
+                await sink.write(plain); idx++; attempts = 0; progress(idx); fill = 0;
+                if (idx < total) cur = new Uint8Array(expectedLen(idx));
+              }
             }
-            return el;
+          }
+          if (idx < total) throw new Error('Connection closed early');
+        } catch (e) {
+          if (e.fatal || ++attempts > 5) throw e;
+          $('d-status').textContent = `Connection problem, retrying (${attempts}/5)...`; await sleep(1000 * attempts);
         }
-
-        // =====================================================================
-        //  START SCREEN TABS
-        // =====================================================================
-        let mode = 'guest'; // 'guest' | 'login' | 'register'
-
-        function setMode(m) {
-            mode = m;
-            const isGuest = m === 'guest';
-            const isReg = m === 'register';
-            $('tab-guest').classList.toggle('active', isGuest);
-            $('tab-login').classList.toggle('active', m === 'login');
-            $('tab-register').classList.toggle('active', isReg);
-            $('guest-form').style.display = isGuest ? 'block' : 'none';
-            $('account-area').style.display = isGuest ? 'none' : 'block';
-            $('confirm-group').style.display = isReg ? 'block' : 'none';
-            $('register-notice').style.display = isReg ? 'block' : 'none';
-            const showSide = !isGuest && !isReg && hasLocalAccounts;
-            $('local-accounts').style.display = showSide ? 'block' : 'none';
-            $('card').classList.toggle('with-side', showSide);
-            $('password').autocomplete = isReg ? 'new-password' : 'current-password';
-            $('authBtn').innerText = isReg ? 'Create account' : 'Log in';
-            $('auth-error').innerText = '';
-            $('guest-error').innerText = '';
-        }
-        $('tab-guest').addEventListener('click', () => setMode('guest'));
-        $('tab-login').addEventListener('click', () => setMode('login'));
-        $('tab-register').addEventListener('click', () => setMode('register'));
-
-        // =====================================================================
-        //  GUEST ROOMS (shared passphrase, no account)
-        // =====================================================================
-        let guestKey, guestUser, guestRoom;
-        let lastTime = 0;
-        let pollInterval;
-        const seen = new Set(); // anti-replay: authenticated (user|ts) tuples already shown
-
-        async function deriveRoomKey(password, saltBytes) {
-            const keyMaterial = await crypto.subtle.importKey(
-                "raw", enc.encode(password), { name: "PBKDF2" }, false, ["deriveKey"]
-            );
-            return await crypto.subtle.deriveKey(
-                { name: "PBKDF2", salt: saltBytes, iterations: PBKDF2_ITERATIONS, hash: "SHA-256" },
-                keyMaterial, { name: "AES-GCM", length: 256 }, false, ["encrypt", "decrypt"]
-            );
-        }
-
-        function buildAAD(room, user, ts) {
-            return enc.encode(JSON.stringify({ r: room, u: user, t: ts }));
-        }
-
-        async function encryptMessage(text, user, ts) {
-            const iv = crypto.getRandomValues(new Uint8Array(12));
-            const encrypted = await crypto.subtle.encrypt(
-                { name: "AES-GCM", iv: iv, additionalData: buildAAD(guestRoom, user, ts) },
-                guestKey, enc.encode(text)
-            );
-            return { iv: Array.from(iv), ciphertext: Array.from(new Uint8Array(encrypted)) };
-        }
-
-        async function decryptMessage(ciphertextArray, ivArray, user, ts) {
-            try {
-                const decrypted = await crypto.subtle.decrypt(
-                    { name: "AES-GCM", iv: new Uint8Array(ivArray), additionalData: buildAAD(guestRoom, user, ts) },
-                    guestKey, new Uint8Array(ciphertextArray)
-                );
-                return dec.decode(decrypted);
-            } catch (e) {
-                return null;
-            }
-        }
-
-        $('guest-form').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const btn  = $('joinBtn');
-            const user = $('guestName').value.trim();
-            const room = $('roomCode').value.trim();
-            const key  = $('encKey').value;
-            $('guest-error').innerText = '';
-
-            if (!user || !room || !key) return $('guest-error').innerText = 'All fields are required.';
-            if (user.length > 32) return $('guest-error').innerText = 'Display name too long (max 32).';
-
-            btn.disabled = true; btn.innerText = 'Joining...';
-            try {
-                const saltRes = await apiFetch(`${API}?room=${encodeURIComponent(room)}&action=salt`);
-                if (!saltRes.ok) throw new Error('salt fetch failed');
-                const { salt } = await saltRes.json();
-                if (!salt) throw new Error('no salt');
-
-                guestUser = user;
-                guestRoom = room;
-                guestKey = await deriveRoomKey(key, b64ToBytes(salt));
-            } catch (err) {
-                btn.disabled = false; btn.innerText = 'Join Room';
-                return $('guest-error').innerText = "Could not reach the server. Make sure it's running over HTTPS.";
-            }
-
-            $('room-title').innerText = `Room: ${room}`;
-            $('gate').style.display = 'none';
-            $('guest-screen').style.display = 'flex';
-            startPolling();
-        });
-
-        $('leaveBtn').addEventListener('click', () => {
-            clearInterval(pollInterval);
-            location.reload();
-        });
-
-        $('sendBtn').addEventListener('click', sendMessage);
-        $('messageInput').addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') sendMessage();
-        });
-
-        function startPolling() {
-            appendSystemMessage("Connected. Messages are end-to-end encrypted in your browser.");
-            pollInterval = setInterval(fetchMessages, 2000);
-            fetchMessages();
-        }
-
-        async function fetchMessages() {
-            try {
-                const res = await apiFetch(`${API}?room=${encodeURIComponent(guestRoom)}&last_time=${lastTime}`);
-                const messages = await res.json();
-                if (!Array.isArray(messages)) return;
-
-                for (let data of messages) {
-                    lastTime = Math.max(lastTime, data.timestamp || 0);
-                    if (data.user === guestUser) continue;
-
-                    const tag = `${data.user}|${data.ts}`;
-                    if (seen.has(tag)) continue;
-
-                    const plaintext = await decryptMessage(data.ciphertext, data.iv, data.user, data.ts);
-                    if (plaintext === null) {
-                        appendMessage(data.user, "🔒 [Unverified — wrong key or tampered message]", 'msg-other msg-error');
-                    } else {
-                        seen.add(tag);
-                        appendMessage(data.user, plaintext, 'msg-other');
-                    }
-                }
-            } catch (e) {
-                // Ignore transient network errors.
-            }
-        }
-
-        async function sendMessage() {
-            const input = $('messageInput');
-            const text = input.value.trim();
-            if (!text) return;
-            if (enc.encode(text).length > 8000) return alert("Message too long.");
-            input.value = '';
-            appendMessage(guestUser, text, 'msg-self');
-
-            const ts = Date.now();
-            const { iv, ciphertext } = await encryptMessage(text, guestUser, ts);
-            const payload = { user: guestUser, iv, ciphertext, ts };
-
-            try {
-                const res = await apiFetch(`${API}?room=${encodeURIComponent(guestRoom)}`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
-                if (!res.ok) appendSystemMessage("Server rejected the message.", true);
-            } catch (e) {
-                appendSystemMessage("Failed to send message to server.", true);
-            }
-        }
-
-        function appendMessage(user, text, className) {
-            const box = $('guest-messages');
-            box.appendChild(popIn(bubble(user, text, className)));
-            scrollDown(box);
-        }
-
-        function appendSystemMessage(text, isError = false) {
-            const box = $('guest-messages');
-            const el = document.createElement('div');
-            el.style.alignSelf = 'center';
-            el.style.fontSize = '0.85rem';
-            el.style.color = isError ? 'var(--danger)' : '#888';
-            el.innerText = text;
-            el.className = 'pop';
-            box.appendChild(el);
-            scrollDown(box);
-        }
-
-        // =====================================================================
-        //  ACCOUNTS: keys, login, register
-        // =====================================================================
-        let currentUser = null;   // { id, username, public_key }
-        let myPrivateKey = null;  // non-extractable ECDH CryptoKey
-        let hasLocalAccounts = false;
-
-        const DOWN_STATUS = [502, 503, 504];
-        const PING_MS = 5000;
-        let pingTimer = null, bootDown = false, nextPing = 0, pinging = false;
-
-        function setOfflineUi(busy, text) {
-            $('retryBtn').disabled = busy;
-            $('retryBtn').classList.toggle('busy', busy);
-            $('retryLabel').innerText = busy ? 'Checking…' : 'Retry now';
-            $('offline-status').innerText = text;
-        }
-        function tick() {
-            if (pinging) return;
-            const left = Math.ceil((nextPing - Date.now()) / 1000);
-            if (left <= 0) return ping();
-            setOfflineUi(false, `Retrying automatically in ${left}s`);
-        }
-        function markDown() {
-            const el = $('offline');
-            el.classList.remove('leaving');
-            el.hidden = false;
-            document.documentElement.classList.remove('booting');
-            if (!pingTimer) {
-                nextPing = Date.now() + PING_MS;
-                pingTimer = setInterval(tick, 1000);
-                tick();
-            }
-        }
-        async function ping() {
-            if (pinging) return;
-            pinging = true;
-            setOfflineUi(true, 'Contacting server…');
-            let up = false;
-            try {
-                const res = await fetch(`${API}?action=me`, { credentials: 'include' });
-                up = !DOWN_STATUS.includes(res.status);
-            } catch (e) {}
-            pinging = false;
-            if (!up) {
-                nextPing = Date.now() + PING_MS;
-                return tick();
-            }
-            clearInterval(pingTimer); pingTimer = null;
-            if (bootDown) return location.reload(); // boot never finished, so redo auto-login
-            const el = $('offline');
-            el.classList.add('leaving');
-            setTimeout(() => { if (!pingTimer) { el.hidden = true; el.classList.remove('leaving'); } }, 250);
-        }
-        $('retryBtn').addEventListener('click', ping);
-
-        // Use instead of fetch(): flags the server as unreachable on network failure / 502-504.
-        async function apiFetch(url, opts) {
-            let res;
-            try { res = await fetch(url, opts); }
-            catch (e) { markDown(); throw new Error('Server unreachable'); }
-            if (DOWN_STATUS.includes(res.status)) { markDown(); throw new Error('Server unreachable'); }
-            return res;
-        }
-
-        async function api(action, body, qs = '') {
-            const res = await apiFetch(`${API}?action=${action}${qs}`, {
-                method: body ? 'POST' : 'GET',
-                credentials: 'include',
-                headers: body ? { 'Content-Type': 'application/json' } : {},
-                body: body ? JSON.stringify(body) : undefined
-            });
-            let data = {};
-            try { data = await res.json(); } catch (e) {}
-            if (!res.ok) {
-                const err = new Error(data.error || 'Request failed');
-                err.status = res.status;
-                throw err;
-            }
-            return data;
-        }
-
-        // One password yields two INDEPENDENT values:
-        //  - authSecret: sent to the server (which stores only a hash of it)
-        //  - wrapKey:    unlocks the private-key backup; never leaves the browser
-        function pbkdf2Material(password) {
-            return crypto.subtle.importKey("raw", enc.encode(password), { name: "PBKDF2" }, false, ["deriveBits", "deriveKey"]);
-        }
-
-        async function deriveAuthSecret(password, username) {
-            const material = await pbkdf2Material(password);
-            const salt = enc.encode('e2ee-chat/auth/v1|' + username.toLowerCase());
-            const bits = await crypto.subtle.deriveBits(
-                { name: "PBKDF2", salt, iterations: PBKDF2_ITERATIONS, hash: "SHA-256" }, material, 256
-            );
-            return bytesToB64(new Uint8Array(bits));
-        }
-
-        async function deriveWrapKey(password, saltBytes) {
-            const material = await pbkdf2Material(password);
-            return crypto.subtle.deriveKey(
-                { name: "PBKDF2", salt: saltBytes, iterations: PBKDF2_ITERATIONS, hash: "SHA-256" },
-                material, { name: "AES-GCM", length: 256 }, false, ["encrypt", "decrypt"]
-            );
-        }
-
-        function backupAAD(username) {
-            return enc.encode('e2ee-chat/key-backup/v1|' + username.toLowerCase());
-        }
-
-        async function generateIdentity() {
-            // Extractable only long enough to wrap a backup; the stored copy is non-extractable.
-            const kp = await crypto.subtle.generateKey({ name: "ECDH", namedCurve: "P-256" }, true, ["deriveKey", "deriveBits"]);
-            const pkcs8 = new Uint8Array(await crypto.subtle.exportKey("pkcs8", kp.privateKey));
-            const pub = new Uint8Array(await crypto.subtle.exportKey("raw", kp.publicKey));
-            return { pkcs8, pub };
-        }
-
-        function importPrivate(pkcs8) {
-            return crypto.subtle.importKey("pkcs8", pkcs8, { name: "ECDH", namedCurve: "P-256" }, false, ["deriveKey", "deriveBits"]);
-        }
-
-        async function fingerprint(pubB64) {
-            const hash = new Uint8Array(await crypto.subtle.digest("SHA-256", b64ToBytes(pubB64)));
-            return Array.from(hash.slice(0, 8)).map(b => b.toString(16).padStart(2, '0')).join('').replace(/(.{4})/g, '$1 ').trim();
-        }
-
-        // IndexedDB: one record per account, so many accounts can share a device
-        function openDb() {
-            return new Promise((resolve, reject) => {
-                const r = indexedDB.open('e2ee-chat', 1);
-                r.onupgradeneeded = () => r.result.createObjectStore('identities', { keyPath: 'userId' });
-                r.onsuccess = () => resolve(r.result);
-                r.onerror = () => reject(r.error);
-            });
-        }
-        async function idbRun(txMode, fn) {
-            const db = await openDb();
-            return new Promise((resolve, reject) => {
-                const tx = db.transaction('identities', txMode);
-                const req = fn(tx.objectStore('identities'));
-                tx.oncomplete = () => resolve(req.result);
-                tx.onerror = () => reject(tx.error);
-            });
-        }
-        const idbPut = (rec) => idbRun('readwrite', s => s.put(rec));
-        const idbGet = (id) => idbRun('readonly', s => s.get(id));
-        const idbAll = () => idbRun('readonly', s => s.getAll());
-        const idbDelete = (id) => idbRun('readwrite', s => s.delete(id));
-
-        async function doRegister(username, password) {
-            const authSecret = await deriveAuthSecret(password, username);
-            const { pkcs8, pub } = await generateIdentity();
-
-            const salt = crypto.getRandomValues(new Uint8Array(16));
-            const iv = crypto.getRandomValues(new Uint8Array(12));
-            const wrapKey = await deriveWrapKey(password, salt);
-            const ct = await crypto.subtle.encrypt(
-                { name: "AES-GCM", iv, additionalData: backupAAD(username) }, wrapKey, pkcs8
-            );
-
-            const r = await api('register', {
-                username,
-                auth: authSecret,
-                public_key: bytesToB64(pub),
-                backup: { ct: bytesToB64(new Uint8Array(ct)), iv: bytesToB64(iv), salt: bytesToB64(salt) }
-            });
-
-            const privateKey = await importPrivate(pkcs8);
-            pkcs8.fill(0);
-            await idbPut({ userId: r.user.id, username: r.user.username, publicKey: r.user.public_key, privateKey });
-            return { user: r.user, privateKey };
-        }
-
-        async function doLogin(username, password) {
-            const authSecret = await deriveAuthSecret(password, username);
-            const r = await api('login', { username, auth: authSecret });
-
-            let rec = await idbGet(r.user.id);
-            if (!rec || rec.publicKey !== r.user.public_key) {
-                // New device (or cleared storage): restore the key from the encrypted backup.
-                try {
-                    const wrapKey = await deriveWrapKey(password, b64ToBytes(r.backup.salt));
-                    const pkcs8 = new Uint8Array(await crypto.subtle.decrypt(
-                        { name: "AES-GCM", iv: b64ToBytes(r.backup.iv), additionalData: backupAAD(r.user.username) },
-                        wrapKey, b64ToBytes(r.backup.ct)
-                    ));
-                    const privateKey = await importPrivate(pkcs8);
-                    pkcs8.fill(0);
-                    rec = { userId: r.user.id, username: r.user.username, publicKey: r.user.public_key, privateKey };
-                    await idbPut(rec);
-                } catch (e) {
-                    await api('logout', {}).catch(() => {});
-                    throw new Error("Could not unlock your encryption key backup.");
-                }
-            }
-            return { user: r.user, privateKey: rec.privateKey };
-        }
-
-        $('auth-form').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const btn = $('authBtn');
-            const username = $('username').value.trim();
-            const password = $('password').value;
-            $('auth-error').innerText = '';
-
-            if (!/^[A-Za-z0-9_.-]{3,32}$/.test(username)) {
-                return $('auth-error').innerText = 'Username must be 3-32 characters: letters, numbers, _ . -';
-            }
-            if (mode === 'register') {
-                if (password.length < 10) return $('auth-error').innerText = 'Use a password of at least 10 characters.';
-                if (password !== $('password2').value) return $('auth-error').innerText = 'Passwords do not match.';
-            }
-
-            btn.disabled = true;
-            btn.innerText = mode === 'register' ? 'Creating account...' : 'Logging in...';
-            try {
-                const result = mode === 'register' ? await doRegister(username, password) : await doLogin(username, password);
-                $('password').value = ''; $('password2').value = '';
-                await enterApp(result.user, result.privateKey);
-            } catch (err) {
-                $('auth-error').innerText = err.message || 'Something went wrong.';
-            } finally {
-                btn.disabled = false;
-                btn.innerText = mode === 'register' ? 'Create account' : 'Log in';
-            }
-        });
-
-        $('logoutBtn').addEventListener('click', async () => {
-            try { await api('logout', {}); } catch (e) {}
-            try { localStorage.removeItem(RESUME_HINT); } catch (e) {}
-            location.reload(); // drops in-memory keys; local keys stay for next login
-        });
-
-        async function renderLocalAccounts() {
-            let accounts = [];
-            try { accounts = await idbAll(); } catch (e) {}
-            hasLocalAccounts = accounts.length > 0;
-            const list = $('local-accounts-list');
-            list.replaceChildren();
-            for (const a of accounts) {
-                const row = document.createElement('div');
-                row.className = 'acct';
-
-                const pick = document.createElement('button');
-                pick.type = 'button';
-                pick.className = 'pick';
-                pick.innerText = a.username;
-                pick.addEventListener('click', () => {
-                    $('username').value = a.username;
-                    $('password').focus();
-                });
-
-                const forget = document.createElement('button');
-                forget.type = 'button';
-                forget.className = 'forget';
-                forget.innerText = 'Forget';
-                forget.title = "Remove this account's key from this device";
-                forget.addEventListener('click', async () => {
-                    if (!confirm(`Remove ${a.username} from this device? You can restore it by logging in with the password.`)) return;
-                    await idbDelete(a.userId);
-                    await renderLocalAccounts();
-                });
-
-                row.append(pick, forget);
-                list.appendChild(row);
-            }
-            setMode(mode);
-        }
-
-        // =====================================================================
-        //  ACCOUNTS: friends + direct messages
-        // =====================================================================
-        let friends = new Map();   // id -> { id, username, public_key }
-        let incoming = [];         // [{ id, username }]
-        let outgoing = [];
-        let blocked = [];
-        let blockedIds = new Set();
-        const peers = new Map();   // id -> user, for people not in the friends list
-        const keysCache = new Map(); // peer public key (b64) -> AES-GCM CryptoKey
-        const convs = new Map();   // peerId -> [{ id, mine, text, ts }]
-        const seenDm = new Set();
-        const readMarks = new Map(); // peerId -> last read message id
-        let lastDmId = 0;
-        let activeId = null;       // activeTarget: { type: 'dm', id }
-        let syncing = false, syncAgain = false;
-        let syncTimer = null;
-
-        const conv = (id) => { if (!convs.has(id)) convs.set(id, []); return convs.get(id); };
-
-        // --- Read markers (per device, remembered in localStorage) ---
-        const readKey = (id) => `strife:read:${currentUser.id}:${id}`;
-        function getRead(id) {
-            if (!readMarks.has(id)) {
-                let v = 0;
-                try { v = parseInt(localStorage.getItem(readKey(id)) || '0', 10) || 0; } catch (e) {}
-                readMarks.set(id, v);
-            }
-            return readMarks.get(id);
-        }
-        function markRead(id) {
-            const list = conv(id);
-            if (!list.length) return;
-            const last = list[list.length - 1].id;
-            readMarks.set(id, last);
-            try { localStorage.setItem(readKey(id), String(last)); } catch (e) {}
-        }
-        function unreadCount(id) {
-            const mark = getRead(id);
-            return conv(id).filter(m => !m.mine && m.id > mark).length;
-        }
-
-        // --- Pairwise DM key: ECDH(myPrivate, theirPublic) -> HKDF -> AES-GCM-256 ---
-        async function getPeer(id) {
-            if (friends.has(id)) return friends.get(id);
-            if (peers.has(id)) return peers.get(id);
-            const r = await api('get_user_key', null, `&id=${encodeURIComponent(id)}`);
-            peers.set(id, r.user);
-            return r.user;
-        }
-
-        async function dmKey(peerId) {
-            const peer = await getPeer(peerId);
-            if (keysCache.has(peer.public_key)) return keysCache.get(peer.public_key);
-            const theirPub = await crypto.subtle.importKey(
-                "raw", b64ToBytes(peer.public_key), { name: "ECDH", namedCurve: "P-256" }, false, []
-            );
-            const bits = await crypto.subtle.deriveBits({ name: "ECDH", public: theirPub }, myPrivateKey, 256);
-            const hk = await crypto.subtle.importKey("raw", bits, "HKDF", false, ["deriveKey"]);
-            const key = await crypto.subtle.deriveKey(
-                { name: "HKDF", hash: "SHA-256", salt: new Uint8Array(0), info: enc.encode('strife/dm/v1') },
-                hk, { name: "AES-GCM", length: 256 }, false, ["encrypt", "decrypt"]
-            );
-            keysCache.set(peer.public_key, key);
-            return key;
-        }
-
-        // Bind sender + recipient + timestamp into the cipher so relabelling fails authentication.
-        const dmAAD = (s, r, t) => enc.encode(JSON.stringify({ s, r, t, v: 1 }));
-
-        async function ingest(m) {
-            if (seenDm.has(m.id)) return null;
-            const mine = m.sender_id === currentUser.id;
-            const peerId = mine ? m.recipient_id : m.sender_id;
-            if (!mine && blockedIds.has(m.sender_id)) return null;
-
-            const key = await dmKey(peerId); // network failure here aborts this sync; it retries next tick
-            seenDm.add(m.id);
-
-            let text = null;
-            try {
-                const pt = await crypto.subtle.decrypt(
-                    { name: "AES-GCM", iv: b64ToBytes(m.iv), additionalData: dmAAD(m.sender_id, m.recipient_id, m.ts) },
-                    key, b64ToBytes(m.ciphertext)
-                );
-                text = dec.decode(pt);
-            } catch (e) { /* tampered or wrong key: shown as undecryptable */ }
-
-            const msg = { id: m.id, mine, peerId, text, ts: m.ts };
-            conv(peerId).push(msg);
-            return msg;
-        }
-
-        // --- Sync loop ---
-        async function sync() {
-            if (!currentUser) return;
-            if (syncing) { syncAgain = true; return; }
-            syncing = true;
-            try {
-                do {
-                    syncAgain = false;
-                    const r = await api('sync', null, `&since=${lastDmId}`);
-                    applySocial(r.social);
-                    for (const m of r.dms) {
-                        const msg = await ingest(m);
-                        if (msg && msg.peerId === activeId) {
-                            const box = $('app-messages');
-                            box.appendChild(popIn(dmBubble(msg)));
-                            scrollDown(box);
-                            if (document.visibilityState === 'visible') markRead(activeId);
-                        }
-                    }
-                    if (r.dms.length) lastDmId = r.dms[r.dms.length - 1].id;
-                    if (r.dms.length >= 200) syncAgain = true;
-                    renderSidebar();
-                } while (syncAgain);
-            } catch (e) {
-                if (e.status === 401) location.reload(); // session ended
-            } finally {
-                syncing = false;
-            }
-        }
-
-        function applySocial(s) {
-            friends = new Map(s.friends.map(f => [f.id, f]));
-            incoming = s.incoming;
-            outgoing = s.outgoing;
-            blocked = s.blocked;
-            blockedIds = new Set(blocked.map(b => b.id));
-            // Removing or blocking someone deletes the conversation server-side; drop our copy too.
-            for (const id of [...convs.keys()]) {
-                if (friends.has(id)) continue;
-                convs.delete(id);
-                readMarks.delete(id);
-                try { localStorage.removeItem(readKey(id)); } catch (e) {}
-            }
-            if (activeId && !friends.has(activeId)) closeDm();
-        }
-
-        // --- Sidebar rendering ---
-        function nameRow(user, buttons) {
-            const row = document.createElement('div');
-            row.className = 'row';
-            const name = document.createElement('div');
-            name.className = 'name';
-            name.innerText = user.username;
-            row.appendChild(name);
-            for (const [label, ghost, fn] of buttons) {
-                const b = document.createElement('button');
-                b.type = 'button';
-                b.className = 'mini-btn' + (ghost ? ' ghost' : '');
-                b.innerText = label;
-                b.addEventListener('click', fn);
-                row.appendChild(b);
-            }
-            return row;
-        }
-
-        function renderSidebar() {
-            // Friends
-            const list = $('friend-list');
-            list.replaceChildren();
-            $('friend-empty').hidden = friends.size > 0;
-            for (const f of friends.values()) {
-                const el = document.createElement('div');
-                el.className = 'friend' + (f.id === activeId ? ' active' : '');
-                const av = document.createElement('div');
-                av.className = 'mini-avatar';
-                av.innerText = f.username.charAt(0).toUpperCase();
-                const name = document.createElement('div');
-                name.className = 'name';
-                name.innerText = f.username;
-                el.append(av, name);
-                const n = unreadCount(f.id);
-                if (n > 0 && f.id !== activeId) {
-                    const badge = document.createElement('div');
-                    badge.className = 'badge';
-                    badge.innerText = n > 99 ? '99+' : String(n);
-                    el.appendChild(badge);
-                }
-                el.addEventListener('click', () => openDm(f.id));
-                list.appendChild(el);
-            }
-
-            // Requests (incoming + outgoing)
-            const req = $('req-list');
-            req.replaceChildren();
-            $('req-section').hidden = incoming.length === 0 && outgoing.length === 0;
-            for (const u of incoming) {
-                req.appendChild(nameRow(u, [
-                    ['Accept', false, () => relAction('accept', { user_id: u.id })],
-                    ['Decline', true, () => relAction('decline', { user_id: u.id })],
-                ]));
-            }
-            for (const u of outgoing) {
-                const row = nameRow({ username: `${u.username} (sent)` }, [
-                    ['Cancel', true, () => relAction('remove', { user_id: u.id })],
-                ]);
-                req.appendChild(row);
-            }
-
-            // Blocked
-            const bl = $('blocked-list');
-            bl.replaceChildren();
-            $('blocked-section').hidden = blocked.length === 0;
-            for (const u of blocked) {
-                bl.appendChild(nameRow(u, [['Unblock', true, () => relAction('unblock', { user_id: u.id })]]));
-            }
-        }
-
-        async function relAction(action, payload) {
-            try {
-                await api('relationship', { action, ...payload });
-            } catch (e) {
-                alert(e.message);
-            }
-            await sync();
-        }
-
-        $('add-form').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const name = $('addName').value.trim();
-            const msg = $('add-msg');
-            if (!name) return;
-            msg.className = 'side-msg';
-            msg.innerText = '';
-            try {
-                await api('relationship', { action: 'send_request', username: name });
-                $('addName').value = '';
-                msg.className = 'side-msg ok';
-                msg.innerText = 'Request sent.';
-                await sync();
-            } catch (err) {
-                msg.className = 'side-msg err';
-                msg.innerText = err.message;
-            }
-        });
-
-        // --- Conversation pane ---
-        function dmBubble(m) {
-            const peer = friends.get(m.peerId) || peers.get(m.peerId);
-            if (m.text === null) {
-                return bubble(m.mine ? null : (peer ? peer.username : 'Unknown'),
-                    '🔒 [Could not decrypt this message]', 'msg-other msg-error', m.ts);
-            }
-            return m.mine
-                ? bubble(null, m.text, 'msg-self', m.ts)
-                : bubble(peer ? peer.username : 'Unknown', m.text, 'msg-other', m.ts);
-        }
-
-        function openDm(id) {
-            const f = friends.get(id);
-            if (!f) return;
-            activeId = id;
-            $('chat-title').innerText = f.username;
-            $('chat-sub').innerText = '';
-            fingerprint(f.public_key).then(fp => {
-                if (activeId === id) $('chat-sub').innerText = 'Safety number: ' + fp;
-            });
-            $('chat-actions').hidden = false;
-            $('dm-input').hidden = false;
-            $('app-shell').classList.add('chat-open');
-
-            const box = $('app-messages');
-            box.classList.remove('empty');
-            box.replaceChildren();
-            for (const m of conv(id)) box.appendChild(dmBubble(m));
-            scrollDown(box, false);
-            box.classList.remove('swap'); void box.offsetWidth; box.classList.add('swap');
-
-            markRead(id);
-            renderSidebar();
-            $('dmText').focus();
-        }
-
-        function closeDm() {
-            activeId = null;
-            $('chat-title').innerText = 'Welcome';
-            $('chat-sub').innerText = '';
-            $('chat-actions').hidden = true;
-            $('dm-input').hidden = true;
-            $('app-shell').classList.remove('chat-open');
-            const box = $('app-messages');
-            box.classList.add('empty');
-            box.classList.remove('swap'); void box.offsetWidth; box.classList.add('swap');
-            box.replaceChildren();
-            box.innerText = 'Pick a friend on the left to start an encrypted conversation.';
-            renderSidebar();
-        }
-
-        async function sendDm() {
-            if (!activeId) return;
-            const input = $('dmText');
-            const text = input.value.trim();
-            if (!text) return;
-            if (enc.encode(text).length > 8000) return alert('Message too long.');
-            const peerId = activeId;
-            input.value = '';
-
-            try {
-                const ts = Date.now();
-                const key = await dmKey(peerId);
-                const iv = crypto.getRandomValues(new Uint8Array(12));
-                const ct = await crypto.subtle.encrypt(
-                    { name: "AES-GCM", iv, additionalData: dmAAD(currentUser.id, peerId, ts) }, key, enc.encode(text)
-                );
-                await api('send_dm', {
-                    recipient_id: peerId,
-                    iv: bytesToB64(iv),
-                    ciphertext: bytesToB64(new Uint8Array(ct)),
-                    ts
-                });
-                await sync(); // our own message comes back through sync, in server order
-            } catch (e) {
-                input.value = text; // let them retry
-                const box = $('app-messages');
-                const el = document.createElement('div');
-                el.style.alignSelf = 'center';
-                el.style.fontSize = '0.85rem';
-                el.style.color = 'var(--danger)';
-                el.innerText = e.message || 'Failed to send.';
-                el.className = 'pop';
-                box.appendChild(el);
-                scrollDown(box);
-            }
-        }
-
-        $('dmSend').addEventListener('click', sendDm);
-        $('dmText').addEventListener('keypress', (e) => { if (e.key === 'Enter') sendDm(); });
-        $('backBtn').addEventListener('click', closeDm);
-
-        $('removeBtn').addEventListener('click', async () => {
-            const f = friends.get(activeId);
-            if (!f || !confirm(`Remove ${f.username} from your friends?`)) return;
-            await relAction('remove', { user_id: f.id });
-        });
-        $('blockBtn').addEventListener('click', async () => {
-            const f = friends.get(activeId);
-            if (!f || !confirm(`Block ${f.username}? They won't be told, and their messages will be dropped.`)) return;
-            await relAction('block', { user_id: f.id });
-        });
-
-        document.addEventListener('visibilitychange', () => {
-            if (document.visibilityState === 'visible' && currentUser) {
-                if (activeId) { markRead(activeId); renderSidebar(); }
-                sync();
-            }
-        });
-
-        async function enterApp(user, privateKey) {
-            currentUser = user;
-            myPrivateKey = privateKey;
-            $('avatar').innerText = user.username.charAt(0).toUpperCase();
-            $('user-name').innerText = user.username;
-            try { localStorage.setItem(RESUME_HINT, '1'); } catch (e) {}
-            $('gate').style.display = 'none';
-            $('app-shell').style.display = 'flex';
-            document.documentElement.classList.remove('booting');
-            fingerprint(user.public_key).then((fp) => { $('user-fp').innerText = fp; });
-            await sync();
-            syncTimer = setInterval(sync, SYNC_MS);
-        }
-
-        // --- Boot: resume an existing session if this device holds that account's key ---
-        (async function boot() {
-            const accountsRendered = renderLocalAccounts(); // runs alongside the session check
-            try {
-                const { user } = await api('me');
-                const rec = await idbGet(user.id);
-                if (rec && rec.publicKey === user.public_key) {
-                    await enterApp(user, rec.privateKey);
-                    return;
-                }
-                await api('logout', {}); // session exists but no local key: force a fresh login
-            } catch (e) {
-                if (e.message === 'Server unreachable') {
-                    bootDown = true;
-                    return; // overlay is up; keep the resume hint and reload once the server is back
-                }
-                // Not signed in, or accounts unavailable: guest mode still works.
-            }
-            // Resume failed: show the start screen.
-            try { localStorage.removeItem(RESUME_HINT); } catch (e) {}
-            await accountsRendered;
-            document.documentElement.classList.remove('booting');
-        })();
-    </script>
+      }
+      await sink.close(); $('d-status').textContent = 'Done'; dl.textContent = 'Download again';
+    } catch (e) { try { await sink.abort(); } catch { /* */ } $('d-status').textContent = 'Failed'; message(out, 'err', e.message); }
+    finally { dl.disabled = false; }
+  });
+}
+
+// --- login / signup / recover ---
+async function loginPage() {
+  if (user && getMaster()) { location.replace('/?dashboard'); return; }
+  const out = $('l-out'), panes = ['login', 'signup', 'recover'], ts = await mountTurnstile($('s-ts'));
+  const show = (tab) => { for (const p of panes) $(p).classList.toggle('hidden', p !== tab); $('recovery').classList.add('hidden'); for (const b of $('tabs').children) b.classList.toggle('active', b.dataset.tab === tab); out.replaceChildren(); };
+  $('tabs').addEventListener('click', (e) => e.target.dataset?.tab && show(e.target.dataset.tab));
+  if (location.hash === '#signup') show('signup');
+  const busy = (form, on) => { for (const b of form.querySelectorAll('button')) b.disabled = on; };
+  const norm = (s) => s.trim().toLowerCase();
+
+  $('login').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const username = norm($('l-user').value), password = $('l-pass').value;
+    if (!username || !password) return message(out, 'err', 'Enter your username and password.');
+    busy(e.target, true); message(out, 'info', 'Logging in... (this takes a second on purpose)');
+    try {
+      const { salt } = await api('salt', { body: { username } });
+      const { authKey, wrapKey } = await deriveFromPassword(password, unb64u(salt));
+      const r = await api('login', { body: { username, authKey: b64u(authKey) } });
+      setMaster(await unwrap(wrapKey, r.wrappedMasterPw, 'master-pw')); location.href = '/?dashboard';
+    } catch (err) { message(out, 'err', err.message); busy(e.target, false); }
+  });
+
+  let recoveryKey = '';
+  $('signup').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const username = norm($('s-user').value), pw = $('s-pass').value;
+    if (!/^[a-z0-9_.-]{3,32}$/.test(username)) return message(out, 'err', 'Username must be 3-32 characters: a-z, 0-9, _ . -');
+    if (pw.length < 10) return message(out, 'err', 'Password must be at least 10 characters.');
+    if (pw !== $('s-pass2').value) return message(out, 'err', 'Passwords do not match.');
+    busy(e.target, true); message(out, 'info', 'Creating your keys... (this takes a second on purpose)');
+    try {
+      const acc = await makeAccount(pw);
+      await api('register', { body: { username, ...acc.send, turnstile: ts.token() } });
+      setMaster(acc.masterKey); recoveryKey = acc.recoveryKey; $('rk').textContent = recoveryKey;
+      for (const p of panes) $(p).classList.add('hidden');
+      $('tabs').classList.add('hidden'); $('recovery').classList.remove('hidden'); out.replaceChildren();
+    } catch (err) { message(out, 'err', err.message); busy(e.target, false); ts.reset(); }
+  });
+  $('rk-copy').onclick = () => navigator.clipboard.writeText(recoveryKey).then(() => ($('rk-copy').textContent = 'Copied'));
+  $('rk-save').onclick = () => {
+    const a = el('a', { href: URL.createObjectURL(new Blob([`Recovery key for ${norm($('s-user').value)}\n\n${recoveryKey}\n\nKeep this file private and safe. It is the only way to recover your account and files if you forget your password.\n`], { type: 'text/plain' })), download: 'recovery-key.txt' });
+    a.click(); URL.revokeObjectURL(a.href);
+  };
+  $('rk-ok').onchange = () => ($('rk-go').disabled = !$('rk-ok').checked);
+  $('rk-go').onclick = () => (location.href = '/?dashboard');
+
+  $('recover').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const username = norm($('r-user').value), pw = $('r-pass').value;
+    if (pw.length < 10) return message(out, 'err', 'Password must be at least 10 characters.');
+    busy(e.target, true); message(out, 'info', 'Checking your recovery key...');
+    try {
+      const { wrappedMasterRec } = await api('recover_start', { body: { username } });
+      let rec;
+      try { rec = await recoverAccount($('r-key').value, wrappedMasterRec, pw); }
+      catch (err) { throw new Error(/incomplete|Invalid/.test(err.message) ? err.message : 'Wrong username or recovery key.'); }
+      await api('recover_finish', { body: { username, ...rec.send } });
+      setMaster(rec.masterKey); location.href = '/?dashboard';
+    } catch (err) { message(out, 'err', err.message); busy(e.target, false); }
+  });
+}
+
+// --- my files ---
+async function dashboardPage() {
+  if (!user) { location.replace('/?login'); return; }
+  const master = await ensureMaster($('gate')), out = $('dash-out');
+  let items = [], mode = 'grid';
+  try { mode = localStorage.getItem('pb_view') === 'list' ? 'list' : 'grid'; } catch { /* */ }
+
+  async function load() {
+    const { files } = await api('files'); let total = 0; items = [];
+    // decrypt all the names at once instead of one after another
+    items = await Promise.all(files.map(async (f) => {
+      let name = '(could not decrypt)', key = null;
+      try { key = await unwrapFileKey(master, f.wrappedKey); name = (await decryptMeta((await fileKeys(key)).meta, f.encMeta)).name; } catch { /* leave placeholder */ }
+      return { f, name, key };
+    }));
+    for (const { f } of items) total += f.size;
+    $('dash-sub').textContent = `${files.length} file${files.length === 1 ? '' : 's'}, ${fmt(total)} stored. No storage limit. File names are encrypted, the server can't read them.`;
+    render();
+  }
+  function render() {
+    for (const b of $('vtoggle').children) b.classList.toggle('active', b.dataset.mode === mode);
+    $('grid').replaceChildren(...(mode === 'grid' ? items.map(({ f, name, key }) => card(f, name, key)) : []));
+    $('rows').replaceChildren(...(mode === 'list' ? items.map(({ f, name, key }) => row(f, name, key)) : []));
+    $('grid').classList.toggle('hidden', mode !== 'grid' || !items.length);
+    $('tbl').classList.toggle('hidden', mode !== 'list' || !items.length);
+    $('empty').classList.toggle('hidden', !!items.length);
+  }
+  $('vtoggle').addEventListener('click', (e) => {
+    const m = e.target.dataset?.mode; if (!m) return;
+    mode = m; try { localStorage.setItem('pb_view', m); } catch { /* */ } render();
+  });
+
+  // the controls are the same in both layouts
+  function controls(f, name, key) {
+    const link = key ? `${location.origin}/?d=${f.id}#${b64u(key)}` : '';
+    const sel = el('select', {}, el('option', { value: '' }, 'Change...'), ...cfg.userExpiry.map((k) => el('option', { value: k }, LABELS[k] || k)));
+    sel.onchange = async () => { try { await api('file_update', { body: { id: f.id, expiry: sel.value } }); await load(); } catch (e) { message(out, 'err', e.message); } };
+    const share = el('button', { class: 'sm' }, f.isPublic ? 'Copy link' : 'Share');
+    share.onclick = async () => {
+      try {
+        if (!f.isPublic) { await api('file_update', { body: { id: f.id, public: true } }); f.isPublic = true; }
+        await navigator.clipboard.writeText(link); share.textContent = 'Copied'; setTimeout(load, 1200);
+      } catch (e) { message(out, 'err', e.message); }
+    };
+    const stop = el('button', { class: 'sm' }, 'Stop sharing');
+    stop.onclick = async () => {
+      stop.disabled = true;
+      try {
+        const r = await api('file_update', { body: { id: f.id, public: false } });
+        f.isPublic = r.isPublic !== undefined ? r.isPublic : false;
+        message(out, 'ok', `"${name}" is private now. Only you can open its link while logged in.`);
+        render();
+      } catch (e) { stop.disabled = false; message(out, 'err', e.message); }
+    };
+    const del = el('button', { class: 'sm danger' }, 'Delete');
+    del.onclick = async () => { if (await askConfirm('Delete file?', `"${name}" will be deleted permanently. This cannot be undone.`)) { await api('file_delete', { body: { id: f.id } }); load(); } };
+    const badge = el('span', { class: 'badge' + (f.isPublic ? ' on' : '') }, f.isPublic ? 'shared' : 'private');
+    return { sel, badge, buttons: [key ? el('a', { href: link }, el('button', { class: 'sm' }, 'Download')) : null, key ? share : null, f.isPublic ? stop : null, del] };
+  }
+  function row(f, name, key) {
+    const c = controls(f, name, key);
+    return el('tr', {}, el('td', { class: 'name' }, name, ' ', c.badge), el('td', {}, fmt(f.size)), el('td', {}, timeLeft(f.expiresAt)), el('td', {}, c.sel),
+      el('td', { class: 'acts' }, ...c.buttons));
+  }
+  function card(f, name, key) {
+    const c = controls(f, name, key);
+    return el('div', { class: 'fcard' }, el('div', { class: 'name' }, name), c.badge,
+      el('div', { class: 'meta' }, `${fmt(f.size)} - expires: ${timeLeft(f.expiresAt)}`),
+      el('label', { class: 'small' }, 'Keep for ', c.sel), el('div', { class: 'acts' }, ...c.buttons));
+  }
+  try { await load(); } catch (e) { message(out, 'err', e.message); }
+}
+
+// --- settings: change password, delete account ---
+async function settingsPage() {
+  if (!user) { location.replace('/?login'); return; }
+  $('set-sub').textContent = `Logged in as ${user.username}.`;
+
+  $('pwform').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const oldPw = $('pw-old').value, newPw = $('pw-new').value;
+    if (newPw.length < 10) return message($('pwout'), 'err', 'New password must be at least 10 characters.');
+    const master = await ensureMaster($('pwgate'));
+    message($('pwout'), 'info', 'Working...');
+    try {
+      const { authKey } = await deriveFromPassword(oldPw, unb64u(user.salt)), next = await rewrapMaster(master, newPw);
+      await api('password', { body: { oldAuthKey: b64u(authKey), ...next } });
+      message($('pwout'), 'ok', 'Password changed.'); $('pw-old').value = $('pw-new').value = '';
+      user = await api('me');
+    } catch (err) { message($('pwout'), 'err', err.message); }
+  });
+
+  $('delform').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const out = $('delout'), btn = e.target.querySelector('button');
+    if ($('del-user').value.trim().toLowerCase() !== user.username) return message(out, 'err', 'The username you typed does not match.');
+    if (!$('del-pw').value) return message(out, 'err', 'Enter your password.');
+    if (!(await askConfirm('Delete your account?', 'Your account and ALL your files will be deleted permanently. This cannot be undone.', 'Delete everything'))) return;
+    btn.disabled = true; message(out, 'info', 'Deleting... (this can take a while if you have a lot of files)');
+    try {
+      const { authKey } = await deriveFromPassword($('del-pw').value, unb64u(user.salt));
+      await api('delete_account', { body: { oldAuthKey: b64u(authKey) } });
+      try { for (const k of Object.keys(localStorage)) if (k.startsWith('pb_resume:')) localStorage.removeItem(k); } catch { /* */ }
+      sessionStorage.clear(); location.href = '/';
+    } catch (err) { message(out, 'err', err.message); btn.disabled = false; }
+  });
+}
+
+if (view === 'upload') uploadPage();
+else if (view === 'download') downloadPage();
+else if (view === 'login') loginPage();
+else if (view === 'dashboard') dashboardPage();
+else if (view === 'settings') settingsPage();
+</script>
 </body>
 </html>
